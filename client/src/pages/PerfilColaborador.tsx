@@ -4,7 +4,7 @@
  * e detalhe de picagens por dia.
  */
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import {
@@ -170,8 +170,8 @@ function BlocoMes({ m }: { m: any }) {
               </tr>
             </thead>
             <tbody>
-              {m.registos.map((r: any, i: number) => (
-                <LinhaRegisto key={i} r={r} />
+              {m.registos.map((r: any) => (
+                <LinhaRegisto key={`${r.data}-${r.numero}`} r={r} />
               ))}
             </tbody>
           </table>
@@ -298,8 +298,8 @@ export default function PerfilColaborador() {
             color: "text-emerald-400",
             show: totais.extraSa > 0,
           },
-        ].map((c, i) => (
-          <div key={i} className="bg-zinc-800/50 border border-zinc-700 rounded-xl p-4">
+        ].map((c) => (
+          <div key={c.label} className="bg-zinc-800/50 border border-zinc-700 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
               {c.icon}
               <span className="text-xs text-zinc-500">{c.label}</span>
@@ -338,7 +338,7 @@ export default function PerfilColaborador() {
               <Bar dataKey="saldo" radius={[4, 4, 0, 0]}>
                 {dadosGrafico.map((entry, index) => (
                   <Cell
-                    key={index}
+                    key={`cell-${index}`}
                     fill={entry.saldo >= 0 ? "#10b981" : "#ef4444"}
                     fillOpacity={0.8}
                   />
@@ -357,8 +357,8 @@ export default function PerfilColaborador() {
           <span className="text-xs text-zinc-600 ml-1">— clique para expandir os registos diários</span>
         </div>
 
-        {[...historico].reverse().map((m, i) => (
-          <BlocoMes key={i} m={m} />
+        {[...historico].reverse().map((m) => (
+          <BlocoMes key={`${m.mesId}-${m.label}`} m={m} />
         ))}
       </div>
     </div>
