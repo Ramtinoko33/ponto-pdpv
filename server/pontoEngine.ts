@@ -172,8 +172,8 @@ function preencherAutomatico(
   return { en1: en1Raw, sa1: sa1Raw, en2: en2Raw, sa2: sa2Raw, en1Auto: false, sa1Auto: false, en2Auto: false, sa2Auto: false, cenario: 'A' };
 }
 
-// ─── CÁLCULO DO SALDO ─────────────────────────────────────────────────────
-function calcularSaldo(
+// ─── CÁLCULO DO SALDO ────────────────────────────────────────────────
+export function calcularSaldo(
   en1: string | null, sa1: string | null,
   en2: string | null, sa2: string | null,
   isSabado: boolean, numStr: string

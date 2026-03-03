@@ -41,3 +41,12 @@
 - [x] Componente: cards de resumo (total atrasos, almoços, extras no período)
 - [x] Navegação: link de perfil na Vista Mensal e Vista Acumulada
 - [x] Navegação: rota /colaborador/:numero
+
+## Edição Inline de Picagens
+- [x] API: atualizar registo diário (EN1, SA1, EN2, SA2) e recalcular saldo
+- [x] Página de detalhe completo por colaborador e mês — tabela com todos os dias
+- [x] Células automáticas destacadas a amarelo/itálico (como no Excel)
+- [x] Edição inline: clicar numa célula de hora para editar
+- [x] Recálculo automático do saldo ao guardar alteração
+- [x] Indicador visual de célula editada manualmente (diferente de automático)
+- [x] Navegação para o detalhe a partir do perfil do colaborador

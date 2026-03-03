@@ -14,7 +14,10 @@ import {
   getRegistosPorColaborador,
   getPerfilColaborador,
   listarColaboradores,
+  atualizarRegisto,
+  getRegistoPorId,
 } from "../pontoDB";
+import { calcularSaldo } from "../pontoEngine";
 
 const MESES_PT = [
   '', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -113,6 +116,49 @@ export const pontoRouter = router({
   listarColaboradores: publicProcedure.query(async () => {
     return listarColaboradores();
   }),
+
+  // Atualizar picagens de um registo e recalcular saldo
+  atualizarPicagens: publicProcedure
+    .input(z.object({
+      id: z.number().int(),
+      en1: z.string().nullable(),
+      sa1: z.string().nullable(),
+      en2: z.string().nullable(),
+      sa2: z.string().nullable(),
+    }))
+    .mutation(async ({ input }) => {
+      // Obter o registo atual para saber se é sábado e o número do colaborador
+      const registo = await getRegistoPorId(input.id);
+      if (!registo) throw new Error('Registo não encontrado');
+
+      const isSabado = registo.diaSemana === 'SÁB' || registo.diaSemana === 'SAB';
+      const numStr = String(registo.numero).trim().replace(/^0+/, '') || '0';
+
+      // Recalcular saldo com os novos valores
+      const calc = calcularSaldo(input.en1, input.sa1, input.en2, input.sa2, isSabado, numStr);
+
+      // Determinar quais campos foram editados manualmente (não são auto)
+      // Se o utilizador editou, marca como não-auto (0)
+      await atualizarRegisto(input.id, {
+        en1: input.en1,
+        sa1: input.sa1,
+        en2: input.en2,
+        sa2: input.sa2,
+        en1Auto: input.en1 !== registo.en1 ? 0 : registo.en1Auto,
+        sa1Auto: input.sa1 !== registo.sa1 ? 0 : registo.sa1Auto,
+        en2Auto: input.en2 !== registo.en2 ? 0 : registo.en2Auto,
+        sa2Auto: input.sa2 !== registo.sa2 ? 0 : registo.sa2Auto,
+        cenario: 'EDIT',
+        saldo: calc.saldo,
+        atrasoEn: calc.atrasoEn,
+        excessoAlm: calc.excessoAlm,
+        saidaCedo: calc.saidaCedo,
+        extraSa: calc.extraSa,
+        detalhe: calc.detalhe,
+      });
+
+      return { success: true, saldo: calc.saldo, detalhe: calc.detalhe };
+    }),
 
   // Perfil completo de um colaborador
   getPerfilColaborador: publicProcedure

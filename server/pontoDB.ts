@@ -214,6 +214,44 @@ export async function getPerfilColaborador(numero: string) {
   return { numero, nome, historico, totais };
 }
 
+// ─── ATUALIZAR REGISTO DIÁRIO ────────────────────────────────────────────────
+
+export async function atualizarRegisto(
+  id: number,
+  campos: {
+    en1?: string | null;
+    sa1?: string | null;
+    en2?: string | null;
+    sa2?: string | null;
+    saldo?: number | null;
+    atrasoEn?: number;
+    excessoAlm?: number;
+    saidaCedo?: number;
+    extraSa?: number;
+    detalhe?: string | null;
+    en1Auto?: number;
+    sa1Auto?: number;
+    en2Auto?: number;
+    sa2Auto?: number;
+    cenario?: string | null;
+  }
+) {
+  const db = await getDb();
+  if (!db) throw new Error("DB não disponível");
+  await db.update(registosDiarios)
+    .set(campos)
+    .where(eq(registosDiarios.id, id));
+}
+
+export async function getRegistoPorId(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB não disponível");
+  const result = await db.select().from(registosDiarios)
+    .where(eq(registosDiarios.id, id))
+    .limit(1);
+  return result[0] ?? null;
+}
+
 // Listar todos os colaboradores distintos
 export async function listarColaboradores() {
   const db = await getDb();

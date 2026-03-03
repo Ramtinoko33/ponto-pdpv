@@ -5,12 +5,12 @@
  */
 
 import React, { useState } from "react";
-import { useParams, useLocation } from "wouter";
+import { useParams, useLocation, Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import {
   ArrowLeft, User, Clock, TrendingUp, TrendingDown,
   AlertTriangle, Calendar, ChevronDown, ChevronUp,
-  Timer, Coffee, LogOut, Zap,
+  Timer, Coffee, LogOut, Zap, ExternalLink,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -105,7 +105,7 @@ function LinhaRegisto({ r }: { r: any }) {
 
 // ─── Bloco de mês expandível ──────────────────────────────────────────────────
 
-function BlocoMes({ m }: { m: any }) {
+function BlocoMes({ m, numero }: { m: any; numero: string }) {
   const [aberto, setAberto] = useState(false);
 
   return (
@@ -118,6 +118,14 @@ function BlocoMes({ m }: { m: any }) {
         <div className="flex items-center gap-4">
           <div>
             <p className="font-semibold text-sm text-zinc-100">{m.label}</p>
+            <Link
+              href={`/colaborador/${numero}/detalhe/${m.mesId}`}
+              onClick={e => e.stopPropagation()}
+              className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 mt-0.5 transition-colors"
+            >
+              <ExternalLink className="w-3 h-3" />
+              Ver detalhe completo
+            </Link>
             <p className="text-xs text-zinc-500 mt-0.5">
               {m.diasTrab} dias trabalhados
               {m.diasJust > 0 && ` · ${m.diasJust} justificados`}
@@ -358,7 +366,7 @@ export default function PerfilColaborador() {
         </div>
 
         {[...historico].reverse().map((m) => (
-          <BlocoMes key={`${m.mesId}-${m.label}`} m={m} />
+          <BlocoMes key={`${m.mesId}-${m.label}`} m={m} numero={numero} />
         ))}
       </div>
     </div>
