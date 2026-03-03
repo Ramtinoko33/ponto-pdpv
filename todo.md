@@ -50,3 +50,7 @@
 - [x] Recálculo automático do saldo ao guardar alteração
 - [x] Indicador visual de célula editada manualmente (diferente de automático)
 - [x] Navegação para o detalhe a partir do perfil do colaborador
+
+## Correções e Melhorias Pendentes
+- [x] Corrigir erro 404 nas rotas /colaborador/* no site publicado (bug: coluna Número não era detetada por falta de acento)
+- [x] Navegação entre colaboradores na vista de detalhe (anterior/próximo)

@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import {
   ArrowLeft, User, Edit3, Check, X, AlertTriangle,
   Clock, Coffee, LogOut, Zap, Calendar, ChevronDown,
-  Save, RotateCcw, Info,
+  Save, RotateCcw, Info, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -295,6 +295,7 @@ export default function DetalheColaborador() {
 
   // Dados do mês e do colaborador
   const { data: meses = [] } = trpc.ponto.listarMeses.useQuery();
+  const { data: colaboradores = [] } = trpc.ponto.listarColaboradores.useQuery();
   const { data: registos = [], isLoading, refetch } = trpc.ponto.getDetalheColaborador.useQuery(
     { numero, mesId },
     { enabled: !!numero && !!mesId }
@@ -302,6 +303,12 @@ export default function DetalheColaborador() {
 
   const mesSel = meses.find(m => m.id === mesId);
   const nomeColab = registos[0]?.nome ?? numero;
+
+  // Navegação entre colaboradores (ordenados por número)
+  const colabOrdenados = [...colaboradores].sort((a, b) => parseInt(a.numero) - parseInt(b.numero));
+  const idxAtual = colabOrdenados.findIndex(c => c.numero === numero);
+  const colabAnterior = idxAtual > 0 ? colabOrdenados[idxAtual - 1] : null;
+  const colabSeguinte = idxAtual >= 0 && idxAtual < colabOrdenados.length - 1 ? colabOrdenados[idxAtual + 1] : null;
 
   // Calcular totais do mês
   const registosValidos = registos.filter(r => !r.justificacao && r.saldo !== null);
@@ -369,6 +376,30 @@ export default function DetalheColaborador() {
             </button>
             <span>/</span>
             <span className="text-foreground font-medium">{mesSel?.label ?? `Mês ${mesId}`}</span>
+          </div>
+          {/* Navegação anterior/próximo */}
+          <div className="ml-auto flex items-center gap-1">
+            <button
+              onClick={() => colabAnterior && navigate(`/colaborador/${colabAnterior.numero}/detalhe/${mesId}`)}
+              disabled={!colabAnterior}
+              title={colabAnterior ? `← ${colabAnterior.nome}` : "Primeiro colaborador"}
+              className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span className="hidden sm:inline max-w-[100px] truncate">{colabAnterior?.nome ?? ""}</span>
+            </button>
+            <span className="text-xs text-muted-foreground/50 px-1">
+              {idxAtual >= 0 ? `${idxAtual + 1}/${colabOrdenados.length}` : ""}
+            </span>
+            <button
+              onClick={() => colabSeguinte && navigate(`/colaborador/${colabSeguinte.numero}/detalhe/${mesId}`)}
+              disabled={!colabSeguinte}
+              title={colabSeguinte ? `${colabSeguinte.nome} →` : "Último colaborador"}
+              className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <span className="hidden sm:inline max-w-[100px] truncate">{colabSeguinte?.nome ?? ""}</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </header>

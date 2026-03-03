@@ -277,7 +277,7 @@ export function processarFicheiro(buffer: Buffer): RegistoProcessado[] {
   const findCol = (candidates: string[]) =>
     headers.find(h => candidates.some(c => h.toLowerCase().includes(c.toLowerCase()))) ?? null;
 
-  const colNum  = findCol(['nº', 'numero', 'num', 'n.']);
+  const colNum  = findCol(['número', 'nº', 'numero', 'num', 'n.']);
   const colNome = findCol(['nome']);
   const colData = findCol(['data']);
   const colHor  = findCol(['horário', 'horario', 'hor']);
