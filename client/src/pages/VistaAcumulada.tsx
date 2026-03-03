@@ -1,5 +1,6 @@
+import { Link } from 'wouter';
 import { trpc } from '@/lib/trpc';
-import { TrendingUp, TrendingDown } from 'lucide-react';
+import { TrendingUp, TrendingDown, ExternalLink } from 'lucide-react';
 
 function fmtMin(min: number, showSign = true) {
   const sign = min >= 0 ? '+' : '-';
@@ -69,6 +70,7 @@ export default function VistaAcumulada() {
                   <th className="text-center px-2 py-2.5 font-semibold text-foreground">Saldo Total</th>
                   <th className="text-center px-2 py-2.5 font-semibold text-muted-foreground">Saldo (min)</th>
                   <th className="text-center px-2 py-2.5 font-semibold text-muted-foreground">Situação</th>
+                  <th className="px-2 py-2.5"></th>
                 </tr>
               </thead>
               <tbody>
@@ -91,6 +93,11 @@ export default function VistaAcumulada() {
                           {r.saldoTotal > 60 ? <TrendingUp className="w-3 h-3" /> : r.saldoTotal < -60 ? <TrendingDown className="w-3 h-3" /> : null}
                           {situacao}
                         </span>
+                      </td>
+                      <td className="px-2 py-2 text-center">
+                        <Link href={`/colaborador/${r.numero}`} className="text-cyan-400 hover:text-cyan-300 transition-colors" title="Ver perfil">
+                          <ExternalLink className="w-3.5 h-3.5 mx-auto" />
+                        </Link>
                       </td>
                     </tr>
                   );

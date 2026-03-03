@@ -3,7 +3,7 @@
  * Helpers de base de dados para o sistema de picagem de ponto
  */
 
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 import { getDb } from "./db";
 import { meses, registosDiarios } from "../drizzle/schema";
 import type { RegistoProcessado, ResumoColaborador } from "./pontoEngine";
@@ -120,6 +120,109 @@ export async function getRegistosPorColaborador(numero: string, mesId?: number) 
     ? and(eq(registosDiarios.numero, numero), eq(registosDiarios.mesId, mesId), eq(registosDiarios.ignorada, 0))
     : and(eq(registosDiarios.numero, numero), eq(registosDiarios.ignorada, 0));
   return db.select().from(registosDiarios).where(conditions).orderBy(registosDiarios.data);
+}
+
+// Perfil completo de um colaborador: resumo por mês + totais
+export async function getPerfilColaborador(numero: string) {
+  const db = await getDb();
+  if (!db) throw new Error("DB não disponível");
+
+  // Todos os registos do colaborador com info do mês
+  const registos = await db
+    .select({
+      mesId: registosDiarios.mesId,
+      mesLabel: meses.label,
+      mesAno: meses.ano,
+      mesMes: meses.mes,
+      data: registosDiarios.data,
+      diaSemana: registosDiarios.diaSemana,
+      horario: registosDiarios.horario,
+      en1: registosDiarios.en1,
+      sa1: registosDiarios.sa1,
+      en2: registosDiarios.en2,
+      sa2: registosDiarios.sa2,
+      en1Auto: registosDiarios.en1Auto,
+      sa1Auto: registosDiarios.sa1Auto,
+      en2Auto: registosDiarios.en2Auto,
+      sa2Auto: registosDiarios.sa2Auto,
+      cenario: registosDiarios.cenario,
+      saldo: registosDiarios.saldo,
+      atrasoEn: registosDiarios.atrasoEn,
+      excessoAlm: registosDiarios.excessoAlm,
+      saidaCedo: registosDiarios.saidaCedo,
+      extraSa: registosDiarios.extraSa,
+      justificacao: registosDiarios.justificacao,
+      detalhe: registosDiarios.detalhe,
+      nome: registosDiarios.nome,
+      numero: registosDiarios.numero,
+    })
+    .from(registosDiarios)
+    .innerJoin(meses, eq(registosDiarios.mesId, meses.id))
+    .where(and(eq(registosDiarios.numero, numero), eq(registosDiarios.ignorada, 0)))
+    .orderBy(desc(meses.ano), desc(meses.mes), registosDiarios.data);
+
+  if (registos.length === 0) return null;
+
+  const nome = registos[0].nome;
+
+  // Agrupar por mês
+  const mesesMap = new Map<number, {
+    mesId: number; label: string; ano: number; mes: number;
+    diasTrab: number; diasJust: number; celulasAuto: number;
+    atrasoEn: number; excessoAlm: number; saidaCedo: number; extraSa: number;
+    saldoTotal: number; registos: typeof registos;
+  }>();
+
+  for (const r of registos) {
+    if (!mesesMap.has(r.mesId)) {
+      mesesMap.set(r.mesId, {
+        mesId: r.mesId, label: r.mesLabel, ano: r.mesAno, mes: r.mesMes,
+        diasTrab: 0, diasJust: 0, celulasAuto: 0,
+        atrasoEn: 0, excessoAlm: 0, saidaCedo: 0, extraSa: 0,
+        saldoTotal: 0, registos: [],
+      });
+    }
+    const m = mesesMap.get(r.mesId)!;
+    m.registos.push(r);
+    if (r.justificacao && !r.saldo) { m.diasJust++; }
+    else if (r.saldo !== null) {
+      m.diasTrab++;
+      m.saldoTotal += r.saldo;
+      m.atrasoEn   += r.atrasoEn;
+      m.excessoAlm += r.excessoAlm;
+      m.saidaCedo  += r.saidaCedo;
+      m.extraSa    += r.extraSa;
+      m.celulasAuto += (r.en1Auto ? 1 : 0) + (r.sa1Auto ? 1 : 0) + (r.en2Auto ? 1 : 0) + (r.sa2Auto ? 1 : 0);
+    }
+  }
+
+  const historico = Array.from(mesesMap.values()).sort((a, b) =>
+    a.ano !== b.ano ? a.ano - b.ano : a.mes - b.mes
+  );
+
+  // Totais globais
+  const totais = historico.reduce((acc, m) => ({
+    diasTrab: acc.diasTrab + m.diasTrab,
+    diasJust: acc.diasJust + m.diasJust,
+    atrasoEn: acc.atrasoEn + m.atrasoEn,
+    excessoAlm: acc.excessoAlm + m.excessoAlm,
+    saidaCedo: acc.saidaCedo + m.saidaCedo,
+    extraSa: acc.extraSa + m.extraSa,
+    saldoTotal: acc.saldoTotal + m.saldoTotal,
+  }), { diasTrab: 0, diasJust: 0, atrasoEn: 0, excessoAlm: 0, saidaCedo: 0, extraSa: 0, saldoTotal: 0 });
+
+  return { numero, nome, historico, totais };
+}
+
+// Listar todos os colaboradores distintos
+export async function listarColaboradores() {
+  const db = await getDb();
+  if (!db) throw new Error("DB não disponível");
+  const result = await db
+    .selectDistinct({ numero: registosDiarios.numero, nome: registosDiarios.nome })
+    .from(registosDiarios)
+    .orderBy(registosDiarios.nome);
+  return result;
 }
 
 // Resumo acumulado por colaborador (todos os meses)

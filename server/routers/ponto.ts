@@ -12,6 +12,8 @@ import {
   getResumoAcumulado,
   apagarMes,
   getRegistosPorColaborador,
+  getPerfilColaborador,
+  listarColaboradores,
 } from "../pontoDB";
 
 const MESES_PT = [
@@ -105,5 +107,17 @@ export const pontoRouter = router({
     .mutation(async ({ input }) => {
       await apagarMes(input.mesId);
       return { success: true };
+    }),
+
+  // Listar todos os colaboradores distintos
+  listarColaboradores: publicProcedure.query(async () => {
+    return listarColaboradores();
+  }),
+
+  // Perfil completo de um colaborador
+  getPerfilColaborador: publicProcedure
+    .input(z.object({ numero: z.string() }))
+    .query(async ({ input }) => {
+      return getPerfilColaborador(input.numero);
     }),
 });

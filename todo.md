@@ -31,3 +31,13 @@
 - [x] Horários personalizados: Patricia (Nº29) e Pedro Silva (Nº12) — entrada 09:00
 - [x] Lista de exclusão de colaboradores (DOMINGOS 1/2/3/C.TINOCO, BRUNO COSTA, WILSON CARVALHO, RICARDO TINOCO)
 - [x] Colunas de detalhe: Atrasos Entrada, Excesso Almoço, Saída Cedo, Horas Extra
+
+## Perfil de Colaborador
+- [x] API: dados de perfil por colaborador (histórico de todos os meses)
+- [x] API: registos diários de um colaborador num mês específico
+- [x] Página: perfil do colaborador com histórico mensal
+- [x] Componente: gráfico de saldo mensal ao longo do ano
+- [x] Componente: tabela de registos diários com detalhe de picagens
+- [x] Componente: cards de resumo (total atrasos, almoços, extras no período)
+- [x] Navegação: link de perfil na Vista Mensal e Vista Acumulada
+- [x] Navegação: rota /colaborador/:numero

@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import { Link } from 'wouter';
 import { trpc } from '@/lib/trpc';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Clock, TrendingUp, TrendingDown, ChevronDown, ChevronUp } from 'lucide-react';
+import { Users, Clock, TrendingUp, TrendingDown, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
 
 interface Mes { id: number; label: string; saldoGeral: number; totalColaboradores: number; totalRegistos: number; }
 
@@ -147,7 +148,17 @@ export default function VistaMensal({ mesId, meses, onSelectMes }: { mesId: numb
                           <td className="px-2 py-2 text-center"><SaldoBadge min={r.saldoTotal} /></td>
                           <td className="px-2 py-2 text-center mono text-muted-foreground">{r.saldoTotal > 0 ? `+${r.saldoTotal}` : r.saldoTotal}</td>
                           <td className="px-2 py-2 text-center">
-                            {expandedColab === r.numero ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground mx-auto" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground mx-auto" />}
+                            <div className="flex items-center justify-center gap-2">
+                              {expandedColab === r.numero ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
+                              <Link
+                                href={`/colaborador/${r.numero}`}
+                                onClick={e => e.stopPropagation()}
+                                className="text-cyan-400 hover:text-cyan-300 transition-colors"
+                                title="Ver perfil completo"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </Link>
+                            </div>
                           </td>
                         </tr>
                         {expandedColab === r.numero && (
