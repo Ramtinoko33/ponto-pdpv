@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'wouter';
 import { trpc } from '@/lib/trpc';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -131,9 +131,8 @@ export default function VistaMensal({ mesId, meses, onSelectMes }: { mesId: numb
                   </thead>
                   <tbody>
                     {resumoFiltrado.map((r, i) => (
-                      <>
+                      <React.Fragment key={r.numero}>
                         <tr
-                          key={r.numero}
                           className={`border-b border-border/50 hover:bg-card/50 cursor-pointer transition-colors ${i % 2 === 0 ? '' : 'bg-card/20'}`}
                           onClick={() => setExpandedColab(expandedColab === r.numero ? null : r.numero)}
                         >
@@ -162,7 +161,7 @@ export default function VistaMensal({ mesId, meses, onSelectMes }: { mesId: numb
                           </td>
                         </tr>
                         {expandedColab === r.numero && (
-                          <tr key={`${r.numero}-detail`} className="bg-card/30">
+                          <tr className="bg-card/30">
                             <td colSpan={11} className="px-4 py-3">
                               <div className="overflow-x-auto">
                                 <table className="w-full text-xs">
@@ -199,7 +198,7 @@ export default function VistaMensal({ mesId, meses, onSelectMes }: { mesId: numb
                             </td>
                           </tr>
                         )}
-                      </>
+                      </React.Fragment>
                     ))}
                     {/* Linha de totais */}
                     <tr className="bg-card border-t-2 border-border font-bold">
