@@ -1,0 +1,38 @@
+{
+  "query": "SELECT DISTINCT numero, nome FROM registos_diarios WHERE nome LIKE '%DOMINGOS%' OR nome LIKE '%BRUNO COSTA%' OR nome LIKE '%WILSON%' OR nome LIKE '%RICARDO TINOCO%' ORDER BY nome;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3Ty6CDLv92wY6J1.6f46bdfa6ab1 --database 8Y4DxzppMuUZV4opNedwrj --execute SELECT DISTINCT numero, nome FROM registos_diarios WHERE nome LIKE '%DOMINGOS%' OR nome LIKE '%BRUNO COSTA%' OR nome LIKE '%WILSON%' OR nome LIKE '%RICARDO TINOCO%' ORDER BY nome;",
+  "rows": [
+    {
+      "numero": "",
+      "nome": "BRUNO COSTA"
+    },
+    {
+      "numero": "",
+      "nome": "DOMINGOS 1"
+    },
+    {
+      "numero": "",
+      "nome": "DOMINGOS 2"
+    },
+    {
+      "numero": "",
+      "nome": "DOMINGOS C. TINOCO"
+    },
+    {
+      "numero": "",
+      "nome": "DOMINGOS3"
+    },
+    {
+      "numero": "",
+      "nome": "RICARDO TINOCO"
+    },
+    {
+      "numero": "",
+      "nome": "WILSON CARVALHO"
+    }
+  ],
+  "messages": [],
+  "stdout": "numero\tnome\n\tBRUNO COSTA\n\tDOMINGOS 1\n\tDOMINGOS 2\n\tDOMINGOS C. TINOCO\n\tDOMINGOS3\n\tRICARDO TINOCO\n\tWILSON CARVALHO\n",
+  "stderr": "",
+  "execution_time_ms": 58
+}

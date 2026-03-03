@@ -1,0 +1,185 @@
+{
+  "query": "SELECT numero, nome, COUNT(*) as registos FROM registos_diarios GROUP BY numero, nome ORDER BY nome;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3Ty6CDLv92wY6J1.6f46bdfa6ab1 --database 8Y4DxzppMuUZV4opNedwrj --execute SELECT numero, nome, COUNT(*) as registos FROM registos_diarios GROUP BY numero, nome ORDER BY nome;",
+  "rows": [
+    {
+      "numero": "",
+      "nome": "ABILIO PINTO",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "BRUNO COSTA",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "CLARA DIAS",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "CLAUDIO CUNHA",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "DIGO MOREIRA",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "DIOGO PEREIRA",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "DIOGO RAMOS",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "DOMINGOS 1",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "DOMINGOS 2",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "DOMINGOS C. TINOCO",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "DOMINGOS3",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "JOAO MENDES",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "JOAO TINOCO",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "JOSE OLIVEIRA",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "JOSE RODRIGUES",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "JULIO RIBEIRO",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "LEANDRO MOREIRA",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "MARCO VICENTE",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "MIGUEL ANGELO",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "MIGUEL SILVA",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "PATRICIA",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "PEDRO ALVES",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "PEDRO PEREIRA",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "Pedro Queiros",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "Pedro Silva",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "RAFAEL COSTA",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "RENATO MAIA",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "RICARDO RIBEIRO",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "RICARDO TINOCO",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "ROBERTO TORRE",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "RUI MAIA",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "SERGIO VICENTE",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "SR. SERRA",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "VIKRAM KUMAR",
+      "registos": "28"
+    },
+    {
+      "numero": "",
+      "nome": "WILSON CARVALHO",
+      "registos": "28"
+    }
+  ],
+  "messages": [],
+  "stdout": "numero\tnome\tregistos\n\tABILIO PINTO\t28\n\tBRUNO COSTA\t28\n\tCLARA DIAS\t28\n\tCLAUDIO CUNHA\t28\n\tDIGO MOREIRA\t28\n\tDIOGO PEREIRA\t28\n\tDIOGO RAMOS\t28\n\tDOMINGOS 1\t28\n\tDOMINGOS 2\t28\n\tDOMINGOS C. TINOCO\t28\n\tDOMINGOS3\t28\n\tJOAO MENDES\t28\n\tJOAO TINOCO\t28\n\tJOSE OLIVEIRA\t28\n\tJOSE RODRIGUES\t28\n\tJULIO RIBEIRO\t28\n\tLEANDRO MOREIRA\t28\n\tMARCO VICENTE\t28\n\tMIGUEL ANGELO\t28\n\tMIGUEL SILVA\t28\n\tPATRICIA\t28\n\tPEDRO ALVES\t28\n\tPEDRO PEREIRA\t28\n\tPedro Queiros\t28\n\tPedro Silva\t28\n\tRAFAEL COSTA\t28\n\tRENATO MAIA\t28\n\tRICARDO RIBEIRO\t28\n\tRICARDO TINOCO\t28\n\tROBERTO TORRE\t28\n\tRUI MAIA\t28\n\tSERGIO VICENTE\t28\n\tSR. SERRA\t28\n\tVIKRAM KUMAR\t28\n\tWILSON CARVALHO\t28\n",
+  "stderr": "",
+  "execution_time_ms": 58
+}
