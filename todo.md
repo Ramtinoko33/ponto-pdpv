@@ -73,3 +73,7 @@
 - [x] Procedures tRPC: listar, adicionar, remover excluídos
 - [x] Motor de cálculo lê excluídos da BD em vez do código
 - [x] Secção na página /admin/horarios para gerir excluídos
+
+## Correções de Bugs
+- [x] Corrigir ordem do recálculo no upsertHorarioCustom: EN1 automáticos devem ser atualizados ANTES de recalcular saldos
+- [x] Recalcular manualmente os registos da Clara (nº13, en1=09:30) com a ordem correta

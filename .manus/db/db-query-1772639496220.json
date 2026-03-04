@@ -1,0 +1,32 @@
+{
+  "query": "SELECT id, numero, nome, en1, sa1, en2, sa2, observacoes FROM horarios_custom WHERE numero = '13';\nSELECT id, data, en1, sa1, en2, sa2, en1Auto, saldo, atrasoEn FROM registos_diarios WHERE numero = '13' AND ignorada = 0 ORDER BY id LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3Ty6CDLv92wY6J1.6f46bdfa6ab1 --database 8Y4DxzppMuUZV4opNedwrj --execute SELECT id, numero, nome, en1, sa1, en2, sa2, observacoes FROM horarios_custom WHERE numero = '13';\nSELECT id, data, en1, sa1, en2, sa2, en1Auto, saldo, atrasoEn FROM registos_diarios WHERE numero = '13' AND ignorada = 0 ORDER BY id LIMIT 10;",
+  "rows": [
+    {
+      "id": "30001",
+      "numero": "13",
+      "nome": "CLARA DIAS",
+      "en1": "570",
+      "sa1": "NULL",
+      "en2": "NULL",
+      "sa2": "NULL",
+      "observacoes": "NULL"
+    }
+  ],
+  "messages": [
+    "id\tdata\ten1\tsa1\ten2\tsa2\ten1Auto\tsaldo\tatrasoEn",
+    "42\t02/02/2026 seg\t9:36\t14:20\t15:23\t20:29\t0\t50\t66",
+    "77\t03/02/2026 ter\t9:36\t13:39\t14:39\t21:22\t0\t106\t66",
+    "112\t04/02/2026 qua\t9:36\t13:23\t15:25\t20:44\t0\t6\t66",
+    "147\t05/02/2026 qui\t9:18\t13:34\t14:13\t18:51\t0\t-6\t48",
+    "182\t06/02/2026 sex\t9:30\t13:24\t14:33\t20:22\t0\t43\t60",
+    "217\t07/02/2026 sáb\t08:30\t13:00\tNULL\tNULL\t1\t0\t0",
+    "287\t09/02/2026 seg\t9:31\t13:45\t14:58\t20:47\t0\t63\t61",
+    "322\t10/02/2026 ter\t9:30\t13:09\t14:16\t20:50\t0\t73\t60",
+    "357\t11/02/2026 qua\t9:30\t13:20\t14:41\t21:10\t0\t79\t60",
+    "392\t12/02/2026 qui\t9:43\t13:14\t14:08\t20:22\t0\t45\t73"
+  ],
+  "stdout": "id\tnumero\tnome\ten1\tsa1\ten2\tsa2\tobservacoes\n30001\t13\tCLARA DIAS\t570\tNULL\tNULL\tNULL\tNULL\nid\tdata\ten1\tsa1\ten2\tsa2\ten1Auto\tsaldo\tatrasoEn\n42\t02/02/2026 seg\t9:36\t14:20\t15:23\t20:29\t0\t50\t66\n77\t03/02/2026 ter\t9:36\t13:39\t14:39\t21:22\t0\t106\t66\n112\t04/02/2026 qua\t9:36\t13:23\t15:25\t20:44\t0\t6\t66\n147\t05/02/2026 qui\t9:18\t13:34\t14:13\t18:51\t0\t-6\t48\n182\t06/02/2026 sex\t9:30\t13:24\t14:33\t20:22\t0\t43\t60\n217\t07/02/2026 sáb\t08:30\t13:00\tNULL\tNULL\t1\t0\t0\n287\t09/02/2026 seg\t9:31\t13:45\t14:58\t20:47\t0\t63\t61\n322\t10/02/2026 ter\t9:30\t13:09\t14:16\t20:50\t0\t73\t60\n357\t11/02/2026 qua\t9:30\t13:20\t14:41\t21:10\t0\t79\t60\n392\t12/02/2026 qui\t9:43\t13:14\t14:08\t20:22\t0\t45\t73\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}

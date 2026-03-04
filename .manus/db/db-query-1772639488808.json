@@ -1,0 +1,27 @@
+{
+  "query": "SELECT * FROM horarios_custom WHERE nome LIKE '%CLARA%' OR nome LIKE '%Clara%';\nSELECT numero, nome FROM registos_diarios WHERE nome LIKE '%CLARA%' OR nome LIKE '%Clara%' LIMIT 3;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3Ty6CDLv92wY6J1.6f46bdfa6ab1 --database 8Y4DxzppMuUZV4opNedwrj --execute SELECT * FROM horarios_custom WHERE nome LIKE '%CLARA%' OR nome LIKE '%Clara%';\nSELECT numero, nome FROM registos_diarios WHERE nome LIKE '%CLARA%' OR nome LIKE '%Clara%' LIMIT 3;",
+  "rows": [
+    {
+      "id": "30001",
+      "numero": "13",
+      "nome": "CLARA DIAS",
+      "en1": "570",
+      "sa1": "NULL",
+      "en2": "NULL",
+      "sa2": "NULL",
+      "observacoes": "NULL",
+      "createdAt": "2026-03-04 15:49:23",
+      "updatedAt": "2026-03-04 15:49:23"
+    }
+  ],
+  "messages": [
+    "numero\tnome",
+    "13\tCLARA DIAS",
+    "13\tCLARA DIAS",
+    "13\tCLARA DIAS"
+  ],
+  "stdout": "id\tnumero\tnome\ten1\tsa1\ten2\tsa2\tobservacoes\tcreatedAt\tupdatedAt\n30001\t13\tCLARA DIAS\t570\tNULL\tNULL\tNULL\tNULL\t2026-03-04 15:49:23\t2026-03-04 15:49:23\nnumero\tnome\n13\tCLARA DIAS\n13\tCLARA DIAS\n13\tCLARA DIAS\n",
+  "stderr": "",
+  "execution_time_ms": 62
+}

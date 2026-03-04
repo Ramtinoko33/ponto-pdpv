@@ -204,9 +204,27 @@ export const pontoRouter = router({
 
       // Recalcular saldos de todos os registos deste colaborador se pedido
       if (input.recalcular) {
-        const mapa = await getMapaHorariosCustom();
         const db = await getDb();
         if (!db) throw new Error('DB não disponível');
+
+        // PASSO 1: Primeiro corrigir EN1 automáticos para o novo valor
+        // (deve ser feito ANTES do recálculo dos saldos)
+        const novoEn1 = input.en1;
+        if (novoEn1 !== undefined && novoEn1 !== null) {
+          const h = Math.floor(novoEn1 / 60);
+          const m = novoEn1 % 60;
+          const novoEn1Str = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+          await db.update(registosDiarios)
+            .set({ en1: novoEn1Str })
+            .where(and(
+              eq(registosDiarios.numero, input.numero),
+              eq(registosDiarios.en1Auto, 1),
+              eq(registosDiarios.ignorada, 0)
+            ));
+        }
+
+        // PASSO 2: Agora recalcular saldos com os valores já atualizados
+        const mapa = await getMapaHorariosCustom();
         const registos = await db.select().from(registosDiarios)
           .where(and(eq(registosDiarios.numero, input.numero), eq(registosDiarios.ignorada, 0)));
 
@@ -223,21 +241,6 @@ export const pontoRouter = router({
               detalhe: calc.detalhe,
             })
             .where(eq(registosDiarios.id, r.id));
-        }
-
-        // Também corrigir EN1 automáticos que foram preenchidos com o horário antigo
-        const novoEn1 = input.en1;
-        if (novoEn1 !== undefined && novoEn1 !== null) {
-          const h = Math.floor(novoEn1 / 60);
-          const m = novoEn1 % 60;
-          const novoEn1Str = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
-          await db.update(registosDiarios)
-            .set({ en1: novoEn1Str })
-            .where(and(
-              eq(registosDiarios.numero, input.numero),
-              eq(registosDiarios.en1Auto, 1),
-              eq(registosDiarios.ignorada, 0)
-            ));
         }
 
         return { success: true, recalculados: registos.length };
