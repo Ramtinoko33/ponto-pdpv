@@ -79,3 +79,4 @@
 - [x] Recalcular manualmente os registos da Clara (nº13, en1=09:30) com a ordem correta
 - [x] Ao excluir colaborador: opção para remover também os registos existentes na BD (checkbox com aviso de confirmação)
 - [x] Corrigir erro "<a> cannot contain a nested <a>" no link "Horários Personalizados" do sidebar (Link com <a> aninhado)
+- [x] Investigar por que João Tinoco continua activo após ser excluído — registos apagados manualmente; adicionado botão "Apagar registos" na lista de excluídos

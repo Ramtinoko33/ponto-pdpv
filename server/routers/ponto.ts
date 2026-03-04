@@ -295,4 +295,16 @@ export const pontoRouter = router({
       await removerExcluido(input.numero);
       return { success: true };
     }),
+
+  // Apagar registos de um colaborador já excluído
+  apagarRegistosExcluido: publicProcedure
+    .input(z.object({ numero: z.string() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error('Sem ligação à base de dados');
+      const result = await db.delete(registosDiarios)
+        .where(eq(registosDiarios.numero, input.numero));
+      const registosApagados = result[0]?.affectedRows ?? 0;
+      return { success: true, registosApagados };
+    }),
 });

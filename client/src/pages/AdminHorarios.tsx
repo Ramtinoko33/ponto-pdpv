@@ -353,6 +353,24 @@ function SecaoExcluidos({ colaboradores }: SecaoExcluidosProps) {
     onError: (e) => { toast.error(`Erro: ${e.message}`); setSaving(false); },
   });
 
+  const apagarRegistosMut = trpc.ponto.apagarRegistosExcluido.useMutation({
+    onSuccess: (data) => {
+      utils.ponto.getResumoMes.invalidate();
+      const msg = data.registosApagados > 0
+        ? `${data.registosApagados} registos apagados com sucesso`
+        : 'Nenhum registo encontrado para este colaborador';
+      toast.success(msg);
+      setSaving(false);
+    },
+    onError: (e) => { toast.error(`Erro: ${e.message}`); setSaving(false); },
+  });
+
+  const handleApagarRegistos = async (numero: string, nome: string | null) => {
+    if (!confirm(`Apagar TODOS os registos de Nº${numero} ${nome ? `(${nome})` : ''}?\n\n⚠️ Esta ação é permanente e não pode ser desfeita.`)) return;
+    setSaving(true);
+    await apagarRegistosMut.mutateAsync({ numero });
+  };
+
   const handleAdicionar = async () => {
     if (!novoNumero) { toast.error('Selecione um colaborador'); return; }
     const colab = colaboradores.find(c => c.numero === novoNumero);
@@ -412,16 +430,29 @@ function SecaoExcluidos({ colaboradores }: SecaoExcluidosProps) {
                   {e.motivo && <p className="text-xs text-muted-foreground">{e.motivo}</p>}
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleRemover(e.numero, e.nome)}
-                disabled={saving}
-                className="h-7 px-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-              >
-                <Trash2 className="w-3 h-3" />
-                Remover
-              </Button>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleApagarRegistos(e.numero, e.nome)}
+                  disabled={saving}
+                  title="Apagar todos os registos deste colaborador da BD"
+                  className="h-7 px-2 text-xs text-orange-500 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950/20"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  Apagar registos
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleRemover(e.numero, e.nome)}
+                  disabled={saving}
+                  title="Remover da lista de excluídos (volta a aparecer em futuros uploads)"
+                  className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Reativar
+                </Button>
+              </div>
             </div>
           ))}
         </div>
