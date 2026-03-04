@@ -83,12 +83,12 @@ export const pontoRouter = router({
       const map = new Map<string, {
         numero: string; nome: string; diasTrab: number; diasJust: number;
         celulasAuto: number; atrasoEn: number; excessoAlm: number;
-        saidaCedo: number; extraSa: number; saldoTotal: number;
+        saidaCedo: number; extraSa: number; extra10Min: number; extra15Min: number; saldoTotal: number;
       }>();
       for (const r of registos) {
         const key = `${r.numero}|${r.nome}`;
         if (!map.has(key)) {
-          map.set(key, { numero: r.numero, nome: r.nome, diasTrab: 0, diasJust: 0, celulasAuto: 0, atrasoEn: 0, excessoAlm: 0, saidaCedo: 0, extraSa: 0, saldoTotal: 0 });
+          map.set(key, { numero: r.numero, nome: r.nome, diasTrab: 0, diasJust: 0, celulasAuto: 0, atrasoEn: 0, excessoAlm: 0, saidaCedo: 0, extraSa: 0, extra10Min: 0, extra15Min: 0, saldoTotal: 0 });
         }
         const res = map.get(key)!;
         if (r.justificacao) { res.diasJust++; continue; }
@@ -99,6 +99,8 @@ export const pontoRouter = router({
           res.excessoAlm += r.excessoAlm;
           res.saidaCedo  += r.saidaCedo;
           res.extraSa    += r.extraSa;
+          res.extra10Min += r.extra10Min ?? 0;
+          res.extra15Min += r.extra15Min ?? 0;
           res.celulasAuto += (r.en1Auto ? 1 : 0) + (r.sa1Auto ? 1 : 0) + (r.en2Auto ? 1 : 0) + (r.sa2Auto ? 1 : 0);
         }
       }

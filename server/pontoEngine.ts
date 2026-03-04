@@ -176,13 +176,29 @@ function preencherAutomatico(
   return { en1: en1Raw, sa1: sa1Raw, en2: en2Raw, sa2: sa2Raw, en1Auto: false, sa1Auto: false, en2Auto: false, sa2Auto: false, cenario: 'A' };
 }
 
+// ─── CÁLCULO DE HORAS EXTRA ────────────────────────────────────────────────
+// Regras:
+//   - Saída esperada: 18:30 (dias úteis) ou 13:00 (sábados)
+//   - Minutos extra até +30min após saída esperada: 10€/hora
+//   - Minutos extra acima de +30min: 15€/hora
+// Retorna { extra10Min, extra15Min }
+function calcularHorasExtra(extraSaMin: number, isSabado: boolean): { extra10Min: number; extra15Min: number } {
+  if (extraSaMin <= 0) return { extra10Min: 0, extra15Min: 0 };
+  const LIMIAR = 30; // minutos — ponto de mudança de tarifa
+  if (extraSaMin <= LIMIAR) {
+    return { extra10Min: extraSaMin, extra15Min: 0 };
+  } else {
+    return { extra10Min: LIMIAR, extra15Min: extraSaMin - LIMIAR };
+  }
+}
+
 // ─── CÁLCULO DO SALDO ────────────────────────────────────────────────
 export function calcularSaldo(
   en1: string | null, sa1: string | null,
   en2: string | null, sa2: string | null,
   isSabado: boolean, numStr: string,
   mapaExterno?: MapaHorarios
-): { saldo: number; atrasoEn: number; excessoAlm: number; saidaCedo: number; extraSa: number; detalhe: string } {
+): { saldo: number; atrasoEn: number; excessoAlm: number; saidaCedo: number; extraSa: number; extra10Min: number; extra15Min: number; detalhe: string } {
   const custom = (mapaExterno ?? HORARIOS_CUSTOM_DEFAULT)[numStr] || {};
   const en1Esp = custom.en1 ?? EN1_ESP;
 
@@ -194,19 +210,30 @@ export function calcularSaldo(
   const detalhes: string[] = [];
   let saldo = 0;
   let atrasoEn = 0, excessoAlm = 0, saidaCedo = 0, extraSa = 0;
+  let extra10Min = 0, extra15Min = 0;
 
   if (isSabado) {
-    if (en1m === null || sa1m === null) return { saldo: 0, atrasoEn: 0, excessoAlm: 0, saidaCedo: 0, extraSa: 0, detalhe: '✓ Cumprido' };
+    if (en1m === null || sa1m === null) return { saldo: 0, atrasoEn: 0, excessoAlm: 0, saidaCedo: 0, extraSa: 0, extra10Min: 0, extra15Min: 0, detalhe: '✓ Cumprido' };
     const tardeSa1 = sa1m - (13 * 60);
-    if (tardeSa1 > 0) { extraSa = tardeSa1; detalhes.push(`Saída tarde +${fmtTime(tardeSa1)}`); }
-    else if (tardeSa1 < 0) { saidaCedo = Math.abs(tardeSa1); detalhes.push(`Saída cedo ${fmtTime(tardeSa1)}`); }
+    if (tardeSa1 > 0) {
+      extraSa = tardeSa1;
+      const ex = calcularHorasExtra(tardeSa1, true);
+      extra10Min = ex.extra10Min; extra15Min = ex.extra15Min;
+      const partes: string[] = [];
+      if (ex.extra10Min > 0) partes.push(`${ex.extra10Min}min@10€`);
+      if (ex.extra15Min > 0) partes.push(`${ex.extra15Min}min@15€`);
+      detalhes.push(`Saída tarde +${fmtTime(tardeSa1)} (${partes.join(' + ')})`);
+    } else if (tardeSa1 < 0) {
+      saidaCedo = Math.abs(tardeSa1);
+      detalhes.push(`Saída cedo ${fmtTime(tardeSa1)}`);
+    }
     if (en1m > en1Esp) { atrasoEn = en1m - en1Esp; detalhes.push(`Entrada atrasada -${fmtTime(atrasoEn)}`); }
     saldo = tardeSa1 - (en1m > en1Esp ? en1m - en1Esp : 0);
-    return { saldo, atrasoEn, excessoAlm, saidaCedo, extraSa, detalhe: detalhes.join(' | ') || '✓ Cumprido' };
+    return { saldo, atrasoEn, excessoAlm, saidaCedo, extraSa, extra10Min, extra15Min, detalhe: detalhes.join(' | ') || '✓ Cumprido' };
   }
 
   if (en1m === null && sa1m === null && en2m === null && sa2m === null) {
-    return { saldo: 0, atrasoEn: 0, excessoAlm: 0, saidaCedo: 0, extraSa: 0, detalhe: '✓ Cumprido' };
+    return { saldo: 0, atrasoEn: 0, excessoAlm: 0, saidaCedo: 0, extraSa: 0, extra10Min: 0, extra15Min: 0, detalhe: '✓ Cumprido' };
   }
 
   // Entrada atrasada
@@ -230,8 +257,18 @@ export function calcularSaldo(
   // Saída final
   if (sa2m !== null) {
     const tardeSa2 = sa2m - SA2_ESP;
-    if (tardeSa2 > 0) { extraSa = tardeSa2; detalhes.push(`Saída tarde +${fmtTime(tardeSa2)}`); }
-    else if (tardeSa2 < 0) { saidaCedo = Math.abs(tardeSa2); detalhes.push(`Saída cedo ${fmtTime(tardeSa2)}`); }
+    if (tardeSa2 > 0) {
+      extraSa = tardeSa2;
+      const ex = calcularHorasExtra(tardeSa2, false);
+      extra10Min = ex.extra10Min; extra15Min = ex.extra15Min;
+      const partes: string[] = [];
+      if (ex.extra10Min > 0) partes.push(`${ex.extra10Min}min@10€`);
+      if (ex.extra15Min > 0) partes.push(`${ex.extra15Min}min@15€`);
+      detalhes.push(`Saída tarde +${fmtTime(tardeSa2)} (${partes.join(' + ')})`);
+    } else if (tardeSa2 < 0) {
+      saidaCedo = Math.abs(tardeSa2);
+      detalhes.push(`Saída cedo ${fmtTime(tardeSa2)}`);
+    }
   }
 
   // Saldo total
@@ -240,7 +277,7 @@ export function calcularSaldo(
   const tardeSa2 = sa2m !== null ? sa2m - SA2_ESP : 0;
   saldo = tardeSa2 - (en1m !== null && en1m > en1Esp ? en1m - en1Esp : 0) - diffAlm;
 
-  return { saldo, atrasoEn, excessoAlm, saidaCedo, extraSa, detalhe: detalhes.join(' | ') || '✓ Cumprido' };
+  return { saldo, atrasoEn, excessoAlm, saidaCedo, extraSa, extra10Min, extra15Min, detalhe: detalhes.join(' | ') || '✓ Cumprido' };
 }
 
 // ─── TIPO DE SAÍDA ─────────────────────────────────────────────────────────
@@ -264,6 +301,8 @@ export interface RegistoProcessado {
   excessoAlm: number;
   saidaCedo: number;
   extraSa: number;
+  extra10Min: number;
+  extra15Min: number;
   justificacao: string | null;
   detalhe: string;
   ignorada: boolean;
@@ -335,20 +374,20 @@ export function processarFicheiro(buffer: Buffer, excluidos?: Set<string>): Regi
 
     // Regra 1: Ignorar domingos
     if (isDomingo) {
-      resultados.push({ numero, nome, data, diaSemana, horario, en1: null, sa1: null, en2: null, sa2: null, en1Auto: false, sa1Auto: false, en2Auto: false, sa2Auto: false, cenario: 'DOM', saldo: null, atrasoEn: 0, excessoAlm: 0, saidaCedo: 0, extraSa: 0, justificacao: null, detalhe: 'Domingo — ignorado', ignorada: true });
+      resultados.push({ numero, nome, data, diaSemana, horario, en1: null, sa1: null, en2: null, sa2: null, en1Auto: false, sa1Auto: false, en2Auto: false, sa2Auto: false, cenario: 'DOM', saldo: null, atrasoEn: 0, excessoAlm: 0, saidaCedo: 0, extraSa: 0, extra10Min: 0, extra15Min: 0, justificacao: null, detalhe: 'Domingo — ignorado', ignorada: true });
       continue;
     }
 
     // Regra 2: FIMS (folgas) — ignorar exceto se sábado com picagem
     const isFims = horario.toUpperCase().includes('FIMS');
     if (isFims && !isSabado) {
-      resultados.push({ numero, nome, data, diaSemana, horario, en1: null, sa1: null, en2: null, sa2: null, en1Auto: false, sa1Auto: false, en2Auto: false, sa2Auto: false, cenario: 'FIMS', saldo: null, atrasoEn: 0, excessoAlm: 0, saidaCedo: 0, extraSa: 0, justificacao: null, detalhe: 'Folga — ignorado', ignorada: true });
+      resultados.push({ numero, nome, data, diaSemana, horario, en1: null, sa1: null, en2: null, sa2: null, en1Auto: false, sa1Auto: false, en2Auto: false, sa2Auto: false, cenario: 'FIMS', saldo: null, atrasoEn: 0, excessoAlm: 0, saidaCedo: 0, extraSa: 0, extra10Min: 0, extra15Min: 0, justificacao: null, detalhe: 'Folga — ignorado', ignorada: true });
       continue;
     }
 
     // Regra 3: Justificação — não preencher automaticamente
     if (just) {
-      resultados.push({ numero, nome, data, diaSemana, horario, en1: en1Raw, sa1: sa1Raw, en2: en2Raw, sa2: sa2Raw, en1Auto: false, sa1Auto: false, en2Auto: false, sa2Auto: false, cenario: 'JUST', saldo: null, atrasoEn: 0, excessoAlm: 0, saidaCedo: 0, extraSa: 0, justificacao: just, detalhe: `Justificação: ${just}`, ignorada: false });
+      resultados.push({ numero, nome, data, diaSemana, horario, en1: en1Raw, sa1: sa1Raw, en2: en2Raw, sa2: sa2Raw, en1Auto: false, sa1Auto: false, en2Auto: false, sa2Auto: false, cenario: 'JUST', saldo: null, atrasoEn: 0, excessoAlm: 0, saidaCedo: 0, extraSa: 0, extra10Min: 0, extra15Min: 0, justificacao: just, detalhe: `Justificação: ${just}`, ignorada: false });
       continue;
     }
 
@@ -365,6 +404,7 @@ export function processarFicheiro(buffer: Buffer, excluidos?: Set<string>): Regi
       saldo: calc.saldo,
       atrasoEn: calc.atrasoEn, excessoAlm: calc.excessoAlm,
       saidaCedo: calc.saidaCedo, extraSa: calc.extraSa,
+      extra10Min: calc.extra10Min, extra15Min: calc.extra15Min,
       justificacao: null, detalhe: calc.detalhe, ignorada: false,
     });
   }
@@ -383,6 +423,8 @@ export interface ResumoColaborador {
   excessoAlm: number;
   saidaCedo: number;
   extraSa: number;
+  extra10Min: number;
+  extra15Min: number;
   saldoTotal: number;
 }
 
@@ -393,7 +435,7 @@ export function calcularResumos(registos: RegistoProcessado[]): ResumoColaborado
     if (r.ignorada) continue;
     const key = `${r.numero}|${r.nome}`;
     if (!map.has(key)) {
-      map.set(key, { numero: r.numero, nome: r.nome, diasTrab: 0, diasJust: 0, celulasAuto: 0, atrasoEn: 0, excessoAlm: 0, saidaCedo: 0, extraSa: 0, saldoTotal: 0 });
+      map.set(key, { numero: r.numero, nome: r.nome, diasTrab: 0, diasJust: 0, celulasAuto: 0, atrasoEn: 0, excessoAlm: 0, saidaCedo: 0, extraSa: 0, extra10Min: 0, extra15Min: 0, saldoTotal: 0 });
     }
     const res = map.get(key)!;
     if (r.justificacao) { res.diasJust++; continue; }
@@ -404,6 +446,8 @@ export function calcularResumos(registos: RegistoProcessado[]): ResumoColaborado
       res.excessoAlm += r.excessoAlm;
       res.saidaCedo  += r.saidaCedo;
       res.extraSa    += r.extraSa;
+      res.extra10Min  += r.extra10Min ?? 0;
+      res.extra15Min  += r.extra15Min ?? 0;
       res.celulasAuto += (r.en1Auto ? 1 : 0) + (r.sa1Auto ? 1 : 0) + (r.en2Auto ? 1 : 0) + (r.sa2Auto ? 1 : 0);
     }
   }

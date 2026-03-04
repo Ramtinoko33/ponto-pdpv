@@ -80,3 +80,10 @@
 - [x] Ao excluir colaborador: opção para remover também os registos existentes na BD (checkbox com aviso de confirmação)
 - [x] Corrigir erro "<a> cannot contain a nested <a>" no link "Horários Personalizados" do sidebar (Link com <a> aninhado)
 - [x] Investigar por que João Tinoco continua activo após ser excluído — registos apagados manualmente; adicionado botão "Apagar registos" na lista de excluídos
+
+## Cálculo de Horas Extra
+- [x] Adicionar campos extra10Min e extra15Min ao schema da BD (minutos a 10€/h e a 15€/h)
+- [x] Atualizar motor de cálculo: minutos após saída esperada (18:30 dias úteis, 13:00 sábados) até +30min = 10€/h; acima = 15€/h
+- [x] Recalcular todos os registos existentes com os novos campos (477 registos)
+- [x] Vista de Detalhe: mostrar colunas extra10Min, extra15Min e valor total em €
+- [x] Relatório Mensal: mostrar total de horas extra em € por colaborador

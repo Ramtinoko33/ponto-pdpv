@@ -93,6 +93,8 @@ export async function guardarMes(
       excessoAlm: r.excessoAlm,
       saidaCedo: r.saidaCedo,
       extraSa: r.extraSa,
+      extra10Min: r.extra10Min ?? 0,
+      extra15Min: r.extra15Min ?? 0,
       justificacao: r.justificacao ?? null,
       detalhe: r.detalhe ?? null,
       ignorada: r.ignorada ? 1 : 0,
@@ -169,7 +171,7 @@ export async function getPerfilColaborador(numero: string) {
   const mesesMap = new Map<number, {
     mesId: number; label: string; ano: number; mes: number;
     diasTrab: number; diasJust: number; celulasAuto: number;
-    atrasoEn: number; excessoAlm: number; saidaCedo: number; extraSa: number;
+    atrasoEn: number; excessoAlm: number; saidaCedo: number; extraSa: number; extra10Min: number; extra15Min: number;
     saldoTotal: number; registos: typeof registos;
   }>();
 
@@ -178,7 +180,7 @@ export async function getPerfilColaborador(numero: string) {
       mesesMap.set(r.mesId, {
         mesId: r.mesId, label: r.mesLabel, ano: r.mesAno, mes: r.mesMes,
         diasTrab: 0, diasJust: 0, celulasAuto: 0,
-        atrasoEn: 0, excessoAlm: 0, saidaCedo: 0, extraSa: 0,
+        atrasoEn: 0, excessoAlm: 0, saidaCedo: 0, extraSa: 0, extra10Min: 0, extra15Min: 0,
         saldoTotal: 0, registos: [],
       });
     }
@@ -192,6 +194,8 @@ export async function getPerfilColaborador(numero: string) {
       m.excessoAlm += r.excessoAlm;
       m.saidaCedo  += r.saidaCedo;
       m.extraSa    += r.extraSa;
+      m.extra10Min  += (r as any).extra10Min ?? 0;
+      m.extra15Min  += (r as any).extra15Min ?? 0;
       m.celulasAuto += (r.en1Auto ? 1 : 0) + (r.sa1Auto ? 1 : 0) + (r.en2Auto ? 1 : 0) + (r.sa2Auto ? 1 : 0);
     }
   }
@@ -285,6 +289,7 @@ export async function getResumoAcumulado(): Promise<ResumoColaborador[]> {
     saldo: r.saldo,
     atrasoEn: r.atrasoEn, excessoAlm: r.excessoAlm,
     saidaCedo: r.saidaCedo, extraSa: r.extraSa,
+    extra10Min: r.extra10Min ?? 0, extra15Min: r.extra15Min ?? 0,
     justificacao: r.justificacao, detalhe: r.detalhe ?? '',
     ignorada: false,
   }));

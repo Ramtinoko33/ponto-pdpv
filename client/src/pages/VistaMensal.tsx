@@ -45,6 +45,9 @@ export default function VistaMensal({ mesId, meses, onSelectMes }: { mesId: numb
   const totCedo   = resumo.reduce((a, r) => a + r.saidaCedo, 0);
   const totExtra  = resumo.reduce((a, r) => a + r.extraSa, 0);
   const totSaldo  = resumo.reduce((a, r) => a + r.saldoTotal, 0);
+  const tot10Min  = resumo.reduce((a, r) => a + (r.extra10Min ?? 0), 0);
+  const tot15Min  = resumo.reduce((a, r) => a + (r.extra15Min ?? 0), 0);
+  const totExtraEuros = Math.round(((tot10Min / 60) * 10 + (tot15Min / 60) * 15) * 100) / 100;
 
   return (
     <div className="space-y-5">
@@ -67,6 +70,7 @@ export default function VistaMensal({ mesId, meses, onSelectMes }: { mesId: numb
           { label: 'Excesso Almoço', value: fmtMin(-totAlm, false), color: 'text-orange-400', icon: <Clock className="w-4 h-4" /> },
           { label: 'Saída Antecipada', value: fmtMin(-totCedo, false), color: 'text-red-400', icon: <TrendingDown className="w-4 h-4" /> },
           { label: 'Horas Extra', value: fmtMin(totExtra, false), color: 'text-emerald-400', icon: <TrendingUp className="w-4 h-4" /> },
+          { label: 'Total Extra €', value: totExtraEuros > 0 ? `${totExtraEuros.toFixed(2)}€` : '—', color: 'text-emerald-300', icon: <span className="font-bold text-xs">€</span> },
         ].map((c, i) => (
           <Card key={i}>
             <CardContent className="p-4">
@@ -124,6 +128,7 @@ export default function VistaMensal({ mesId, meses, onSelectMes }: { mesId: numb
                       <th className="text-center px-2 py-2.5 font-semibold text-orange-400">Exc. Almoço</th>
                       <th className="text-center px-2 py-2.5 font-semibold text-red-400">Saída Cedo</th>
                       <th className="text-center px-2 py-2.5 font-semibold text-emerald-400">Horas Extra</th>
+                      <th className="text-center px-2 py-2.5 font-semibold text-emerald-300">Extra €</th>
                       <th className="text-center px-2 py-2.5 font-semibold text-foreground">Saldo Total</th>
                       <th className="text-center px-2 py-2.5 font-semibold text-muted-foreground">Saldo (min)</th>
                       <th className="px-2 py-2.5"></th>
@@ -144,6 +149,11 @@ export default function VistaMensal({ mesId, meses, onSelectMes }: { mesId: numb
                           <td className="px-2 py-2 text-center mono text-orange-400">{r.excessoAlm > 0 ? `-${fmtMin(r.excessoAlm, false)}` : '—'}</td>
                           <td className="px-2 py-2 text-center mono text-red-400">{r.saidaCedo > 0 ? `-${fmtMin(r.saidaCedo, false)}` : '—'}</td>
                           <td className="px-2 py-2 text-center mono text-emerald-400">{r.extraSa > 0 ? `+${fmtMin(r.extraSa, false)}` : '—'}</td>
+                          <td className="px-2 py-2 text-center mono text-emerald-300 font-semibold">
+                            {((r.extra10Min ?? 0) + (r.extra15Min ?? 0)) > 0
+                              ? `${(((r.extra10Min ?? 0) / 60) * 10 + ((r.extra15Min ?? 0) / 60) * 15).toFixed(2)}€`
+                              : '—'}
+                          </td>
                           <td className="px-2 py-2 text-center"><SaldoBadge min={r.saldoTotal} /></td>
                           <td className="px-2 py-2 text-center mono text-muted-foreground">{r.saldoTotal > 0 ? `+${r.saldoTotal}` : r.saldoTotal}</td>
                           <td className="px-2 py-2 text-center">
@@ -162,7 +172,7 @@ export default function VistaMensal({ mesId, meses, onSelectMes }: { mesId: numb
                         </tr>
                         {expandedColab === r.numero && (
                           <tr className="bg-card/30">
-                            <td colSpan={11} className="px-4 py-3">
+                            <td colSpan={12} className="px-4 py-3">
                               <div className="overflow-x-auto">
                                 <table className="w-full text-xs">
                                   <thead>

@@ -62,6 +62,8 @@ export const registosDiarios = mysqlTable("registos_diarios", {
   excessoAlm: int("excessoAlm").notNull().default(0),
   saidaCedo: int("saidaCedo").notNull().default(0),
   extraSa: int("extraSa").notNull().default(0),
+  extra10Min: int("extra10Min").notNull().default(0),  // minutos extra pagos a 10€/hora
+  extra15Min: int("extra15Min").notNull().default(0),  // minutos extra pagos a 15€/hora
   justificacao: varchar("justificacao", { length: 100 }),
   detalhe: text("detalhe"),
   ignorada: int("ignorada").notNull().default(0),

@@ -227,6 +227,35 @@ function LinhaRegistoEditavel({ registo: r, onSaved }: LinhaRegistoEditavelProps
         )}
       </td>
 
+      {/* Extra @10€ */}
+      <td className="px-2 py-1.5 text-center">
+        {!isJust && (r.extra10Min ?? 0) > 0 ? (
+          <span className="font-mono text-xs text-emerald-500">{r.extra10Min}min</span>
+        ) : (
+          <span className="text-muted-foreground/30 text-xs">—</span>
+        )}
+      </td>
+
+      {/* Extra @15€ */}
+      <td className="px-2 py-1.5 text-center">
+        {!isJust && (r.extra15Min ?? 0) > 0 ? (
+          <span className="font-mono text-xs text-emerald-400">{r.extra15Min}min</span>
+        ) : (
+          <span className="text-muted-foreground/30 text-xs">—</span>
+        )}
+      </td>
+
+      {/* Valor Extra € */}
+      <td className="px-2 py-1.5 text-center">
+        {!isJust && ((r.extra10Min ?? 0) + (r.extra15Min ?? 0)) > 0 ? (
+          <span className="font-mono text-xs font-semibold text-emerald-400">
+            {(((r.extra10Min ?? 0) / 60) * 10 + ((r.extra15Min ?? 0) / 60) * 15).toFixed(2)}€
+          </span>
+        ) : (
+          <span className="text-muted-foreground/30 text-xs">—</span>
+        )}
+      </td>
+
       {/* Cenário */}
       <td className="px-2 py-1.5 text-center">
         <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
@@ -317,6 +346,9 @@ export default function DetalheColaborador() {
   const totAlm = registosValidos.reduce((a, r) => a + r.excessoAlm, 0);
   const totCedo = registosValidos.reduce((a, r) => a + r.saidaCedo, 0);
   const totExtra = registosValidos.reduce((a, r) => a + r.extraSa, 0);
+  const tot10Min = registosValidos.reduce((a, r) => a + (r.extra10Min ?? 0), 0);
+  const tot15Min = registosValidos.reduce((a, r) => a + (r.extra15Min ?? 0), 0);
+  const totExtraEuros = Math.round(((tot10Min / 60) * 10 + (tot15Min / 60) * 15) * 100) / 100;
   const celulasAuto = registosValidos.reduce((a, r) =>
     a + (r.en1Auto ? 1 : 0) + (r.sa1Auto ? 1 : 0) + (r.en2Auto ? 1 : 0) + (r.sa2Auto ? 1 : 0), 0);
   const diasJust = registos.filter(r => !!r.justificacao).length;
@@ -437,6 +469,7 @@ export default function DetalheColaborador() {
             { icon: <Coffee className="w-4 h-4 text-orange-500" />, label: "Excesso Almoço", value: totAlm > 0 ? fmtMinAbs(totAlm) : "—", color: "text-orange-500" },
             { icon: <LogOut className="w-4 h-4 text-red-500" />, label: "Saída Antecipada", value: totCedo > 0 ? fmtMinAbs(totCedo) : "—", color: "text-red-500" },
             { icon: <Zap className="w-4 h-4 text-emerald-500" />, label: "Horas Extra", value: totExtra > 0 ? fmtMinAbs(totExtra) : "—", color: "text-emerald-500" },
+            { icon: <span className="text-emerald-400 font-bold text-xs">€€€</span>, label: "Valor Extra", value: totExtraEuros > 0 ? `${totExtraEuros.toFixed(2)}€` : "—", color: "text-emerald-400" },
             { icon: <Calendar className="w-4 h-4 text-sky-500" />, label: "Dias Justificados", value: diasJust > 0 ? String(diasJust) : "—", color: "text-sky-500" },
             { icon: <Info className="w-4 h-4 text-amber-500" />, label: "Células Auto", value: celulasAuto > 0 ? String(celulasAuto) : "—", color: "text-amber-500" },
           ].map((c) => (
@@ -485,6 +518,9 @@ export default function DetalheColaborador() {
                   <th className="text-center px-2 py-3 text-xs font-semibold text-muted-foreground whitespace-nowrap">2ª Entrada</th>
                   <th className="text-center px-2 py-3 text-xs font-semibold text-muted-foreground whitespace-nowrap">2ª Saída</th>
                   <th className="text-center px-2 py-3 text-xs font-semibold text-muted-foreground whitespace-nowrap">Saldo</th>
+                  <th className="text-center px-2 py-3 text-xs font-semibold text-emerald-500/70 whitespace-nowrap">@10€</th>
+                  <th className="text-center px-2 py-3 text-xs font-semibold text-emerald-400/70 whitespace-nowrap">@15€</th>
+                  <th className="text-center px-2 py-3 text-xs font-semibold text-emerald-400 whitespace-nowrap">Extra €</th>
                   <th className="text-center px-2 py-3 text-xs font-semibold text-muted-foreground whitespace-nowrap">Cenário</th>
                   <th className="text-left px-2 py-3 text-xs font-semibold text-muted-foreground hidden lg:table-cell">Detalhe</th>
                   <th className="px-2 py-3 text-right text-xs font-semibold text-muted-foreground">Ações</th>

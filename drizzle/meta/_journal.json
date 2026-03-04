@@ -29,6 +29,13 @@
       "when": 1772636945308,
       "tag": "0003_youthful_annihilus",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1772663364085,
+      "tag": "0004_wealthy_oracle",
+      "breakpoints": true
     }
   ]
 }
