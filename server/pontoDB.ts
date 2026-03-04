@@ -291,3 +291,80 @@ export async function getResumoAcumulado(): Promise<ResumoColaborador[]> {
 
   return calcularResumos(registos);
 }
+
+// ─── HORÁRIOS PERSONALIZADOS ──────────────────────────────────────────────
+
+import { horariosCustom } from "../drizzle/schema";
+import type { HorarioCustom } from "../drizzle/schema";
+
+export async function listarHorariosCustom(): Promise<HorarioCustom[]> {
+  const db = await getDb();
+  if (!db) throw new Error("DB não disponível");
+  return db.select().from(horariosCustom).orderBy(sql`CAST(numero AS UNSIGNED)`);
+}
+
+export async function getHorarioCustom(numero: string): Promise<HorarioCustom | null> {
+  const db = await getDb();
+  if (!db) throw new Error("DB não disponível");
+  const result = await db.select().from(horariosCustom)
+    .where(eq(horariosCustom.numero, numero))
+    .limit(1);
+  return result[0] ?? null;
+}
+
+export async function upsertHorarioCustom(data: {
+  numero: string;
+  nome?: string;
+  en1?: number | null;
+  sa1?: number | null;
+  en2?: number | null;
+  sa2?: number | null;
+  observacoes?: string | null;
+}): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("DB não disponível");
+  const existing = await getHorarioCustom(data.numero);
+  if (existing) {
+    await db.update(horariosCustom)
+      .set({
+        nome: data.nome ?? existing.nome,
+        en1: data.en1 !== undefined ? data.en1 : existing.en1,
+        sa1: data.sa1 !== undefined ? data.sa1 : existing.sa1,
+        en2: data.en2 !== undefined ? data.en2 : existing.en2,
+        sa2: data.sa2 !== undefined ? data.sa2 : existing.sa2,
+        observacoes: data.observacoes !== undefined ? data.observacoes : existing.observacoes,
+      })
+      .where(eq(horariosCustom.numero, data.numero));
+  } else {
+    await db.insert(horariosCustom).values({
+      numero: data.numero,
+      nome: data.nome ?? null,
+      en1: data.en1 ?? null,
+      sa1: data.sa1 ?? null,
+      en2: data.en2 ?? null,
+      sa2: data.sa2 ?? null,
+      observacoes: data.observacoes ?? null,
+    });
+  }
+}
+
+export async function apagarHorarioCustom(numero: string): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("DB não disponível");
+  await db.delete(horariosCustom).where(eq(horariosCustom.numero, numero));
+}
+
+// Carregar todos os horários como mapa para uso no motor de cálculo
+export async function getMapaHorariosCustom(): Promise<Record<string, { en1?: number; sa1?: number; en2?: number; sa2?: number }>> {
+  const todos = await listarHorariosCustom();
+  const mapa: Record<string, { en1?: number; sa1?: number; en2?: number; sa2?: number }> = {};
+  for (const h of todos) {
+    mapa[h.numero] = {
+      ...(h.en1 !== null ? { en1: h.en1 } : {}),
+      ...(h.sa1 !== null ? { sa1: h.sa1 } : {}),
+      ...(h.en2 !== null ? { en2: h.en2 } : {}),
+      ...(h.sa2 !== null ? { sa2: h.sa2 } : {}),
+    };
+  }
+  return mapa;
+}

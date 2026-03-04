@@ -3,8 +3,9 @@ import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
 import {
   Clock, Upload, Trash2, ChevronRight, BarChart3, Users,
-  TrendingUp, Calendar, AlertCircle, CheckCircle2, FileSpreadsheet,
+  TrendingUp, Calendar, AlertCircle, CheckCircle2, FileSpreadsheet, Settings,
 } from 'lucide-react';
+import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import VistaMensal from './VistaMensal';
@@ -131,6 +132,16 @@ export default function Home() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Link de Administração */}
+        <div className="p-3 border-t border-sidebar-border">
+          <Link href="/admin/horarios">
+            <a className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors">
+              <Settings className="w-3.5 h-3.5" />
+              Horários Personalizados
+            </a>
+          </Link>
         </div>
       </aside>
 

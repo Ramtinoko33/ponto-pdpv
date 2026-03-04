@@ -16,7 +16,14 @@ import {
   listarColaboradores,
   atualizarRegisto,
   getRegistoPorId,
+  listarHorariosCustom,
+  upsertHorarioCustom,
+  apagarHorarioCustom,
+  getMapaHorariosCustom,
 } from "../pontoDB";
+import { getDb } from "../db";
+import { registosDiarios } from "../../drizzle/schema";
+import { eq, and, inArray } from "drizzle-orm";
 import { calcularSaldo } from "../pontoEngine";
 
 const MESES_PT = [
@@ -165,5 +172,79 @@ export const pontoRouter = router({
     .input(z.object({ numero: z.string() }))
     .query(async ({ input }) => {
       return getPerfilColaborador(input.numero);
+    }),
+
+  // ─── HORÁRIOS PERSONALIZADOS ─────────────────────────────────────────────
+
+  // Listar todos os horários personalizados
+  listarHorariosCustom: publicProcedure.query(async () => {
+    return listarHorariosCustom();
+  }),
+
+  // Criar ou atualizar horário personalizado
+  upsertHorarioCustom: publicProcedure
+    .input(z.object({
+      numero: z.string().min(1),
+      nome: z.string().optional(),
+      en1: z.number().int().min(0).max(1439).nullable().optional(),
+      sa1: z.number().int().min(0).max(1439).nullable().optional(),
+      en2: z.number().int().min(0).max(1439).nullable().optional(),
+      sa2: z.number().int().min(0).max(1439).nullable().optional(),
+      observacoes: z.string().nullable().optional(),
+      recalcular: z.boolean().optional().default(false),
+    }))
+    .mutation(async ({ input }) => {
+      await upsertHorarioCustom(input);
+
+      // Recalcular saldos de todos os registos deste colaborador se pedido
+      if (input.recalcular) {
+        const mapa = await getMapaHorariosCustom();
+        const db = await getDb();
+        if (!db) throw new Error('DB não disponível');
+        const registos = await db.select().from(registosDiarios)
+          .where(and(eq(registosDiarios.numero, input.numero), eq(registosDiarios.ignorada, 0)));
+
+        for (const r of registos) {
+          const isSabado = r.diaSemana === 'SÁB' || r.diaSemana === 'SAB';
+          const calc = calcularSaldo(r.en1, r.sa1, r.en2, r.sa2, isSabado, r.numero, mapa);
+          await db.update(registosDiarios)
+            .set({
+              saldo: calc.saldo,
+              atrasoEn: calc.atrasoEn,
+              excessoAlm: calc.excessoAlm,
+              saidaCedo: calc.saidaCedo,
+              extraSa: calc.extraSa,
+              detalhe: calc.detalhe,
+            })
+            .where(eq(registosDiarios.id, r.id));
+        }
+
+        // Também corrigir EN1 automáticos que foram preenchidos com o horário antigo
+        const novoEn1 = input.en1;
+        if (novoEn1 !== undefined && novoEn1 !== null) {
+          const h = Math.floor(novoEn1 / 60);
+          const m = novoEn1 % 60;
+          const novoEn1Str = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+          await db.update(registosDiarios)
+            .set({ en1: novoEn1Str })
+            .where(and(
+              eq(registosDiarios.numero, input.numero),
+              eq(registosDiarios.en1Auto, 1),
+              eq(registosDiarios.ignorada, 0)
+            ));
+        }
+
+        return { success: true, recalculados: registos.length };
+      }
+
+      return { success: true, recalculados: 0 };
+    }),
+
+  // Apagar horário personalizado
+  apagarHorarioCustom: publicProcedure
+    .input(z.object({ numero: z.string() }))
+    .mutation(async ({ input }) => {
+      await apagarHorarioCustom(input.numero);
+      return { success: true };
     }),
 });

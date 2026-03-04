@@ -19,11 +19,14 @@ const SAIDA_MAX = 20 * 60;      // 20:00
 // Colaboradores a excluir
 const EXCLUIR_NUMEROS = new Set(['97', '98', '99', '100', '67', '53', '33']);
 
-// Horários personalizados por número de colaborador
-const HORARIOS_CUSTOM: Record<string, { en1?: number; sa2?: number }> = {
+// Horários personalizados por número de colaborador (fallback hardcoded)
+// Estes são usados apenas quando não é passado um mapa externo (ex: no upload inicial)
+const HORARIOS_CUSTOM_DEFAULT: Record<string, { en1?: number; sa1?: number; en2?: number; sa2?: number }> = {
   '12': { en1: 9 * 60 },        // Pedro Silva — entrada 09:00
   '29': { en1: 9 * 60 },        // Patricia — entrada 09:00
 };
+
+export type MapaHorarios = Record<string, { en1?: number; sa1?: number; en2?: number; sa2?: number }>;
 
 // ─── UTILITÁRIOS ──────────────────────────────────────────────────────────
 function toMin(s: string | null | undefined): number | null {
@@ -49,7 +52,8 @@ function isSaidaFinal(m: number | null): boolean {
 function preencherAutomatico(
   en1Raw: string | null, sa1Raw: string | null,
   en2Raw: string | null, sa2Raw: string | null,
-  isSabado: boolean, numStr: string
+  isSabado: boolean, numStr: string,
+  mapaExterno?: MapaHorarios
 ): {
   en1: string | null; sa1: string | null;
   en2: string | null; sa2: string | null;
@@ -57,7 +61,7 @@ function preencherAutomatico(
   en2Auto: boolean; sa2Auto: boolean;
   cenario: string;
 } {
-  const custom = HORARIOS_CUSTOM[numStr] || {};
+  const custom = (mapaExterno ?? HORARIOS_CUSTOM_DEFAULT)[numStr] || {};
   const en1Esp = custom.en1 ?? EN1_ESP;
 
   let en1m = toMin(en1Raw);
@@ -176,9 +180,10 @@ function preencherAutomatico(
 export function calcularSaldo(
   en1: string | null, sa1: string | null,
   en2: string | null, sa2: string | null,
-  isSabado: boolean, numStr: string
+  isSabado: boolean, numStr: string,
+  mapaExterno?: MapaHorarios
 ): { saldo: number; atrasoEn: number; excessoAlm: number; saidaCedo: number; extraSa: number; detalhe: string } {
-  const custom = HORARIOS_CUSTOM[numStr] || {};
+  const custom = (mapaExterno ?? HORARIOS_CUSTOM_DEFAULT)[numStr] || {};
   const en1Esp = custom.en1 ?? EN1_ESP;
 
   const en1m = toMin(en1);

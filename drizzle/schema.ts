@@ -68,3 +68,21 @@ export const registosDiarios = mysqlTable("registos_diarios", {
 });
 
 export type RegistoDiario = typeof registosDiarios.$inferSelect;
+
+// ─── Horários personalizados por colaborador ─────────────────────────────────
+export const horariosCustom = mysqlTable("horarios_custom", {
+  id: int("id").autoincrement().primaryKey(),
+  numero: varchar("numero", { length: 10 }).notNull().unique(),
+  nome: varchar("nome", { length: 100 }),
+  // Horas em minutos desde meia-noite (ex: 09:00 = 540). NULL = usa o padrão global
+  en1: int("en1"),   // Hora de entrada (padrão: 510 = 08:30)
+  sa1: int("sa1"),   // Hora de saída almoço (padrão: 780 = 13:00)
+  en2: int("en2"),   // Hora de entrada tarde (padrão: 840 = 14:00)
+  sa2: int("sa2"),   // Hora de saída final (padrão: 1110 = 18:30)
+  observacoes: text("observacoes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type HorarioCustom = typeof horariosCustom.$inferSelect;
+export type InsertHorarioCustom = typeof horariosCustom.$inferInsert;
