@@ -136,11 +136,12 @@ export default function Home() {
 
         {/* Link de Administração */}
         <div className="p-3 border-t border-sidebar-border">
-          <Link href="/admin/horarios">
-            <a className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors">
-              <Settings className="w-3.5 h-3.5" />
-              Horários Personalizados
-            </a>
+          <Link
+            href="/admin/horarios"
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+          >
+            <Settings className="w-3.5 h-3.5" />
+            Horários Personalizados
           </Link>
         </div>
       </aside>
