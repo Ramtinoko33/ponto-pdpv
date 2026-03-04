@@ -80,6 +80,24 @@ describe("calcularSaldo — edição inline", () => {
     expect(result.saldo).toBe(0);
   });
 
+  it("horário personalizado nº29: entrada 08:30 é atraso de 0 (antes das 09:00)", () => {
+    // Patricia entra às 08:52 — antes das 09:00 — não deve ter atraso
+    const result = calcularSaldo("08:52", "12:08", "13:05", "18:33", false, "29");
+    expect(result.atrasoEn).toBe(0);
+    expect(result.saldo).toBeGreaterThanOrEqual(0);
+  });
+
+  it("horário personalizado nº29: entrada 09:47 é atraso de 47 min", () => {
+    const result = calcularSaldo("09:47", "12:08", "13:21", "18:35", false, "29");
+    expect(result.atrasoEn).toBe(47);
+    expect(result.saldo).toBeLessThan(0);
+  });
+
+  it("horário personalizado nº12: entrada 08:30 não é atraso (antes das 09:00)", () => {
+    const result = calcularSaldo("08:30", "13:00", "14:00", "18:30", false, "12");
+    expect(result.atrasoEn).toBe(0);
+  });
+
   it("cenário SF: valor entre 17:00-20:00 na coluna EN1 é tratado como saída final", () => {
     // Se EN1=17:30 (saída final), deve ser tratado como saída final
     const result = calcularSaldo("08:30", "13:00", "14:00", "17:30", false, "1");

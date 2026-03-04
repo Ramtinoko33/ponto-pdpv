@@ -54,3 +54,7 @@
 ## Correções e Melhorias Pendentes
 - [x] Corrigir erro 404 nas rotas /colaborador/* no site publicado (bug: coluna Número não era detetada por falta de acento)
 - [x] Navegação entre colaboradores na vista de detalhe (anterior/próximo)
+
+## Correções de Horário
+- [x] Corrigir horário de entrada do Pedro Silva (nº12) e Patrícia (nº29) para 09:00 (em vez de 08:30)
+- [x] Recalcular saldos de todos os registos afetados na BD (50 registos corrigidos)

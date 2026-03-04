@@ -76,9 +76,9 @@ function preencherAutomatico(
     const SAB_SAIDA_MIN = 12 * 60;
     if (en1m !== null && en1m >= SAB_SAIDA_MIN && sa1m === null) {
       sa1Raw = fmtTime(en1m); sa1m = en1m;
-      en1Raw = '08:30'; en1a = true; en1m = en1Esp;
+      en1Raw = fmtTime(en1Esp); en1a = true; en1m = en1Esp;
     }
-    if (en1m === null) { en1Raw = '08:30'; en1a = true; }
+    if (en1m === null) { en1Raw = fmtTime(en1Esp); en1a = true; }
     if (toMin(sa1Raw) === null) { sa1Raw = '13:00'; sa1a = true; }
     return { en1: en1Raw, sa1: sa1Raw, en2: null, sa2: null, en1Auto: en1a, sa1Auto: sa1a, en2Auto: false, sa2Auto: false, cenario: 'SAB' };
   }
@@ -136,7 +136,7 @@ function preencherAutomatico(
 
   // Tudo vazio
   if (en1m === null && sa1m === null && en2m === null && sa2m === null) {
-    return { en1: '08:30', sa1: '13:00', en2: '14:00', sa2: '18:30', en1Auto: true, sa1Auto: true, en2Auto: true, sa2Auto: true, cenario: 'D' };
+    return { en1: fmtTime(en1Esp), sa1: '13:00', en2: '14:00', sa2: '18:30', en1Auto: true, sa1Auto: true, en2Auto: true, sa2Auto: true, cenario: 'D' };
   }
 
   // EN1+SA1 preenchidos, EN2+SA2 vazios, SA1 >= 14:00
