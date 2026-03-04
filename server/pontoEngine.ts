@@ -182,13 +182,18 @@ function preencherAutomatico(
 //   - Minutos extra até +30min após saída esperada: 10€/hora
 //   - Minutos extra acima de +30min: 15€/hora
 // Retorna { extra10Min, extra15Min }
-function calcularHorasExtra(extraSaMin: number, isSabado: boolean): { extra10Min: number; extra15Min: number } {
+// Regra: se extraSaMin <= 30 min → tudo a 10€/h
+//        se extraSaMin >  30 min → TODOS os minutos a 15€/h (não há divisão)
+// O excesso de almoço é SEMPRE 10€/h e não se soma à saída para efeitos de tarifa
+function calcularHorasExtra(extraSaMin: number, _isSabado: boolean): { extra10Min: number; extra15Min: number } {
   if (extraSaMin <= 0) return { extra10Min: 0, extra15Min: 0 };
   const LIMIAR = 30; // minutos — ponto de mudança de tarifa
   if (extraSaMin <= LIMIAR) {
+    // Até 30min extra: todos os minutos a 10€/h
     return { extra10Min: extraSaMin, extra15Min: 0 };
   } else {
-    return { extra10Min: LIMIAR, extra15Min: extraSaMin - LIMIAR };
+    // Mais de 30min extra: TODOS os minutos a 15€/h
+    return { extra10Min: 0, extra15Min: extraSaMin };
   }
 }
 

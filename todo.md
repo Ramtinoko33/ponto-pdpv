@@ -87,3 +87,8 @@
 - [x] Recalcular todos os registos existentes com os novos campos (477 registos)
 - [x] Vista de Detalhe: mostrar colunas extra10Min, extra15Min e valor total em €
 - [x] Relatório Mensal: mostrar total de horas extra em € por colaborador
+
+## Correção Lógica Horas Extra
+- [x] Corrigir calcularHorasExtra: se extraSaMin > 30, TODOS os minutos a 15€/h (não 30@10€ + resto@15€)
+- [x] Excesso de almoço: sempre 10€/h, nunca somado à saída para efeitos de tarifa
+- [x] Recalcular todos os registos na BD com a lógica corrigida (477 registos)

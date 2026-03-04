@@ -37,11 +37,39 @@ describe("calcularSaldo — edição inline", () => {
     expect(result.saldo).toBeLessThan(0);
   });
 
-  it("calcula horas extra corretamente", () => {
-    // Saída às 19:00 em vez de 18:30 → 30 min extra
+  it("calcula horas extra corretamente (até 30min = 10€/h)", () => {
+    // Saída às 19:00 em vez de 18:30 → 30 min extra (exatamente no limiar)
     const result = calcularSaldo("08:30", "13:00", "14:00", "19:00", false, "1");
     expect(result.extraSa).toBe(30);
+    expect(result.extra10Min).toBe(30);
+    expect(result.extra15Min).toBe(0);
     expect(result.saldo).toBeGreaterThan(0);
+  });
+
+  it("horas extra acima de 30min: TODOS os minutos a 15€/h", () => {
+    // Saída às 19:27 → 57 min extra (acima do limiar) → todos a 15€/h
+    const result = calcularSaldo("08:30", "13:00", "14:00", "19:27", false, "1");
+    expect(result.extraSa).toBe(57);
+    expect(result.extra10Min).toBe(0);  // Não há divisão
+    expect(result.extra15Min).toBe(57); // Todos a 15€/h
+    // Valor: 57/60 * 15 = 14.25€
+    const euros = (result.extra15Min / 60) * 15;
+    expect(euros).toBeCloseTo(14.25, 1);
+  });
+
+  it("horas extra exatamente 31min: todos a 15€/h", () => {
+    // Saída às 19:01 → 31 min extra (1 min acima do limiar) → todos a 15€/h
+    const result = calcularSaldo("08:30", "13:00", "14:00", "19:01", false, "1");
+    expect(result.extra10Min).toBe(0);
+    expect(result.extra15Min).toBe(31);
+  });
+
+  it("excesso de almoço não afeta a tarifa das horas extra de saída", () => {
+    // Almoço longo (90min) + saída tarde 57min → saída ainda a 15€/h (independentes)
+    const result = calcularSaldo("08:30", "13:00", "14:30", "19:27", false, "1");
+    expect(result.excessoAlm).toBe(30); // 30min de excesso de almoço
+    expect(result.extra15Min).toBe(57); // Saída: todos a 15€/h (não somados ao almoço)
+    expect(result.extra10Min).toBe(0);
   });
 
   it("entrada antes das 08:30 não conta como positivo", () => {
