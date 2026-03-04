@@ -368,3 +368,39 @@ export async function getMapaHorariosCustom(): Promise<Record<string, { en1?: nu
   }
   return mapa;
 }
+
+// ─── COLABORADORES EXCLUÍDOS ──────────────────────────────────────────────
+
+import { colaboradoresExcluidos } from "../drizzle/schema";
+import type { ColaboradorExcluido } from "../drizzle/schema";
+
+export async function listarExcluidos(): Promise<ColaboradorExcluido[]> {
+  const db = await getDb();
+  if (!db) throw new Error("DB não disponível");
+  return db.select().from(colaboradoresExcluidos).orderBy(sql`CAST(numero AS UNSIGNED)`);
+}
+
+export async function adicionarExcluido(data: {
+  numero: string;
+  nome?: string | null;
+  motivo?: string | null;
+}): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("DB não disponível");
+  await db.insert(colaboradoresExcluidos).values({
+    numero: data.numero,
+    nome: data.nome ?? null,
+    motivo: data.motivo ?? null,
+  });
+}
+
+export async function removerExcluido(numero: string): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("DB não disponível");
+  await db.delete(colaboradoresExcluidos).where(eq(colaboradoresExcluidos.numero, numero));
+}
+
+export async function getSetExcluidos(): Promise<Set<string>> {
+  const todos = await listarExcluidos();
+  return new Set(todos.map(e => e.numero));
+}

@@ -20,6 +20,10 @@ import {
   upsertHorarioCustom,
   apagarHorarioCustom,
   getMapaHorariosCustom,
+  listarExcluidos,
+  adicionarExcluido,
+  removerExcluido,
+  getSetExcluidos,
 } from "../pontoDB";
 import { getDb } from "../db";
 import { registosDiarios } from "../../drizzle/schema";
@@ -48,7 +52,9 @@ export const pontoRouter = router({
     }))
     .mutation(async ({ input }) => {
       const buffer = Buffer.from(input.fileBase64, 'base64');
-      const registos = processarFicheiro(buffer);
+      // Carregar lista de excluídos da BD para usar no processamento
+      const setExcluidos = await getSetExcluidos();
+      const registos = processarFicheiro(buffer, setExcluidos);
       const label = `${MESES_PT[input.mes]} ${input.ano}`;
       const mesId = await guardarMes(input.ano, input.mes, label, registos);
       const resumos = registos.filter(r => !r.ignorada && r.saldo !== null);
@@ -245,6 +251,33 @@ export const pontoRouter = router({
     .input(z.object({ numero: z.string() }))
     .mutation(async ({ input }) => {
       await apagarHorarioCustom(input.numero);
+      return { success: true };
+    }),
+
+  // ─── COLABORADORES EXCLUÍDOS ────────────────────────────────────────────────
+
+  // Listar todos os excluídos
+  listarExcluidos: publicProcedure.query(async () => {
+    return listarExcluidos();
+  }),
+
+  // Adicionar colaborador à lista de excluídos
+  adicionarExcluido: publicProcedure
+    .input(z.object({
+      numero: z.string().min(1),
+      nome: z.string().nullable().optional(),
+      motivo: z.string().nullable().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      await adicionarExcluido(input);
+      return { success: true };
+    }),
+
+  // Remover colaborador da lista de excluídos
+  removerExcluido: publicProcedure
+    .input(z.object({ numero: z.string() }))
+    .mutation(async ({ input }) => {
+      await removerExcluido(input.numero);
       return { success: true };
     }),
 });

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import {
-  Clock, Plus, Trash2, Save, RefreshCw, AlertCircle, CheckCircle2, Settings
+  Clock, Plus, Trash2, Save, RefreshCw, AlertCircle, CheckCircle2, Settings, UserX, UserCheck
 } from 'lucide-react';
 
 // ─── Utilitários ─────────────────────────────────────────────────────────────
@@ -315,7 +315,157 @@ function NovoHorarioForm({ colaboradores, numerosExistentes, onAdd, saving }: No
   );
 }
 
-// ─── Página principal ─────────────────────────────────────────────────────────
+// ─── // ─── Secção de Excluídos ───────────────────────────────────────────────
+
+interface SecaoExcluidosProps {
+  colaboradores: Array<{ numero: string; nome: string }>;
+}
+
+function SecaoExcluidos({ colaboradores }: SecaoExcluidosProps) {
+  const utils = trpc.useUtils();
+  const [novoNumero, setNovoNumero] = useState('');
+  const [novoMotivo, setNovoMotivo] = useState('');
+  const [adicionando, setAdicionando] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const { data: excluidos, isLoading } = trpc.ponto.listarExcluidos.useQuery();
+
+  const adicionar = trpc.ponto.adicionarExcluido.useMutation({
+    onSuccess: () => {
+      utils.ponto.listarExcluidos.invalidate();
+      toast.success('Colaborador adicionado à lista de excluídos');
+      setNovoNumero(''); setNovoMotivo(''); setAdicionando(false); setSaving(false);
+    },
+    onError: (e) => { toast.error(`Erro: ${e.message}`); setSaving(false); },
+  });
+
+  const remover = trpc.ponto.removerExcluido.useMutation({
+    onSuccess: () => {
+      utils.ponto.listarExcluidos.invalidate();
+      toast.success('Colaborador removido da lista de excluídos');
+      setSaving(false);
+    },
+    onError: (e) => { toast.error(`Erro: ${e.message}`); setSaving(false); },
+  });
+
+  const handleAdicionar = async () => {
+    if (!novoNumero) { toast.error('Selecione um colaborador'); return; }
+    setSaving(true);
+    const colab = colaboradores.find(c => c.numero === novoNumero);
+    await adicionar.mutateAsync({ numero: novoNumero, nome: colab?.nome ?? null, motivo: novoMotivo || null });
+  };
+
+  const handleRemover = async (numero: string, nome: string | null) => {
+    if (!confirm(`Remover Nº${numero} ${nome ? `(${nome})` : ''} da lista de excluídos?\nEste colaborador voltará a aparecer nos próximos uploads.`)) return;
+    setSaving(true);
+    await remover.mutateAsync({ numero });
+  };
+
+  const numerosExcluidos = new Set((excluidos ?? []).map(e => e.numero));
+  const colaboradoresDisponiveis = colaboradores.filter(c => !numerosExcluidos.has(c.numero));
+
+  return (
+    <div className="space-y-4">
+      {/* Título da secção */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <UserX className="w-4 h-4 text-destructive" />
+          <h2 className="text-sm font-semibold">Colaboradores Excluídos</h2>
+        </div>
+        {(excluidos?.length ?? 0) > 0 && (
+          <span className="text-xs text-muted-foreground">{excluidos!.length} excluídos</span>
+        )}
+      </div>
+
+      <div className="p-3 rounded-lg border border-border bg-muted/20 text-xs text-muted-foreground">
+        Colaboradores nesta lista são <strong>ignorados no processamento</strong> de novos ficheiros.
+        Os registos já existentes na BD não são afetados.
+      </div>
+
+      {/* Lista de excluídos */}
+      {isLoading ? (
+        <div className="py-4 text-center text-sm text-muted-foreground">A carregar...</div>
+      ) : (excluidos?.length ?? 0) === 0 ? (
+        <div className="py-6 text-center space-y-2">
+          <UserCheck className="w-7 h-7 mx-auto text-muted-foreground/40" />
+          <p className="text-sm text-muted-foreground">Nenhum colaborador excluído.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {excluidos!.map(e => (
+            <div key={e.numero} className="flex items-center justify-between px-4 py-2.5 rounded-lg border border-border bg-card">
+              <div className="flex items-center gap-3">
+                <div className="w-7 h-7 rounded-full bg-destructive/10 border border-destructive/20 flex items-center justify-center text-xs font-mono font-bold text-destructive">
+                  {e.numero}
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{e.nome ?? `Colaborador Nº${e.numero}`}</p>
+                  {e.motivo && <p className="text-xs text-muted-foreground">{e.motivo}</p>}
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleRemover(e.numero, e.nome)}
+                disabled={saving}
+                className="h-7 px-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="w-3 h-3" />
+                Remover
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Formulário de adicionar */}
+      {!adicionando ? (
+        <Button variant="outline" size="sm" onClick={() => setAdicionando(true)} className="gap-2 text-xs w-full sm:w-auto border-destructive/30 text-destructive hover:bg-destructive/5">
+          <Plus className="w-3.5 h-3.5" />
+          Adicionar colaborador à lista de excluídos
+        </Button>
+      ) : (
+        <div className="border border-destructive/20 rounded-lg p-4 bg-destructive/5 space-y-3">
+          <p className="text-xs font-semibold text-destructive flex items-center gap-2">
+            <UserX className="w-3.5 h-3.5" />
+            Excluir colaborador
+          </p>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Colaborador</label>
+            <select
+              value={novoNumero}
+              onChange={e => setNovoNumero(e.target.value)}
+              className="w-full h-9 rounded-md border border-border bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            >
+              <option value="">Selecionar colaborador...</option>
+              {colaboradoresDisponiveis.map(c => (
+                <option key={c.numero} value={c.numero}>Nº{c.numero} — {c.nome}</option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Motivo (opcional)</label>
+            <Input
+              value={novoMotivo}
+              onChange={e => setNovoMotivo(e.target.value)}
+              placeholder="Ex: Colaborador externo, conta de sistema..."
+              className="h-8 text-sm"
+            />
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button variant="ghost" size="sm" onClick={() => setAdicionando(false)} className="text-xs">Cancelar</Button>
+            <Button size="sm" onClick={handleAdicionar} disabled={saving} className="text-xs gap-1 bg-destructive hover:bg-destructive/90 text-white">
+              <UserX className="w-3 h-3" />
+              {saving ? 'A guardar...' : 'Excluir colaborador'}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Página principal ──────────────────────────────────────────────────
 
 export default function AdminHorarios() {
   const utils = trpc.useUtils();
@@ -440,6 +590,17 @@ export default function AdminHorarios() {
             saving={savingId !== null}
           />
         )}
+
+        {/* Separador */}
+        <div className="border-t border-border pt-6" />
+
+        {/* Secção de Excluídos */}
+        {!loadingColab && colaboradores && (
+          <SecaoExcluidos colaboradores={colaboradores} />
+        )}
+
+        {/* Separador */}
+        <div className="border-t border-border pt-2" />
 
         {/* Tabela de referência */}
         <div className="border border-border rounded-lg overflow-hidden">

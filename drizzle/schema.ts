@@ -86,3 +86,15 @@ export const horariosCustom = mysqlTable("horarios_custom", {
 
 export type HorarioCustom = typeof horariosCustom.$inferSelect;
 export type InsertHorarioCustom = typeof horariosCustom.$inferInsert;
+
+// ─── Colaboradores excluídos do processamento ───────────────────────────────────
+export const colaboradoresExcluidos = mysqlTable("colaboradores_excluidos", {
+  id: int("id").autoincrement().primaryKey(),
+  numero: varchar("numero", { length: 10 }).notNull().unique(),
+  nome: varchar("nome", { length: 100 }),
+  motivo: varchar("motivo", { length: 200 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ColaboradorExcluido = typeof colaboradoresExcluidos.$inferSelect;
+export type InsertColaboradorExcluido = typeof colaboradoresExcluidos.$inferInsert;

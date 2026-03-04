@@ -270,7 +270,7 @@ export interface RegistoProcessado {
 }
 
 // ─── PROCESSAMENTO PRINCIPAL ──────────────────────────────────────────────
-export function processarFicheiro(buffer: Buffer): RegistoProcessado[] {
+export function processarFicheiro(buffer: Buffer, excluidos?: Set<string>): RegistoProcessado[] {
   const wb = XLSX.read(buffer, { type: 'buffer', cellDates: true });
   const ws = wb.Sheets[wb.SheetNames[0]];
   const raw = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: null, raw: false });
@@ -315,9 +315,10 @@ export function processarFicheiro(buffer: Buffer): RegistoProcessado[] {
 
     if (!nome && !numero) continue;
 
-    // Excluir colaboradores
+    // Excluir colaboradores (usa set externo da BD se fornecido, senão usa o hardcoded)
     const numStr = String(numero).trim().replace(/^0+/, '') || '0';
-    if (EXCLUIR_NUMEROS.has(numStr) || EXCLUIR_NUMEROS.has(numero.trim())) continue;
+    const setExcluidos = excluidos ?? EXCLUIR_NUMEROS;
+    if (setExcluidos.has(numStr) || setExcluidos.has(numero.trim())) continue;
 
     // Normalizar justificação
     if (just && ['', 'none', '-', '—', '\xa0'].includes(just.toLowerCase())) just = null;

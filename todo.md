@@ -66,3 +66,10 @@
 - [x] Motor de cálculo lê horários da BD em vez do código (mapa externo opcional)
 - [x] Página /admin/horarios com lista de colaboradores e edição de horários
 - [x] Recálculo automático dos saldos ao guardar alteração de horário
+
+## Gestão de Colaboradores Excluídos
+- [x] Tabela colaboradores_excluidos na BD (numero, nome, motivo)
+- [x] Migrar dados hardcoded do código (97, 98, 99, 100, 67, 53, 33) para a BD
+- [x] Procedures tRPC: listar, adicionar, remover excluídos
+- [x] Motor de cálculo lê excluídos da BD em vez do código
+- [x] Secção na página /admin/horarios para gerir excluídos
