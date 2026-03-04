@@ -325,15 +325,20 @@ function SecaoExcluidos({ colaboradores }: SecaoExcluidosProps) {
   const utils = trpc.useUtils();
   const [novoNumero, setNovoNumero] = useState('');
   const [novoMotivo, setNovoMotivo] = useState('');
+  const [apagarRegistos, setApagarRegistos] = useState(true);
   const [adicionando, setAdicionando] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const { data: excluidos, isLoading } = trpc.ponto.listarExcluidos.useQuery();
 
   const adicionar = trpc.ponto.adicionarExcluido.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
       utils.ponto.listarExcluidos.invalidate();
-      toast.success('Colaborador adicionado à lista de excluídos');
+      utils.ponto.getResumoMes.invalidate();
+      const msg = data.registosApagados > 0
+        ? `Colaborador excluído e ${data.registosApagados} registos removidos`
+        : 'Colaborador adicionado à lista de excluídos';
+      toast.success(msg);
       setNovoNumero(''); setNovoMotivo(''); setAdicionando(false); setSaving(false);
     },
     onError: (e) => { toast.error(`Erro: ${e.message}`); setSaving(false); },
@@ -350,9 +355,13 @@ function SecaoExcluidos({ colaboradores }: SecaoExcluidosProps) {
 
   const handleAdicionar = async () => {
     if (!novoNumero) { toast.error('Selecione um colaborador'); return; }
-    setSaving(true);
     const colab = colaboradores.find(c => c.numero === novoNumero);
-    await adicionar.mutateAsync({ numero: novoNumero, nome: colab?.nome ?? null, motivo: novoMotivo || null });
+    const confirmMsg = apagarRegistos
+      ? `Excluir Nº${novoNumero} ${colab?.nome ? `(${colab.nome})` : ''}?\n\n⚠️ Os registos existentes na BD serão APAGADOS permanentemente.\nEsta ação não pode ser desfeita.`
+      : `Excluir Nº${novoNumero} ${colab?.nome ? `(${colab.nome})` : ''}?\n\nOs registos existentes serão mantidos, mas este colaborador não aparecerá em futuros uploads.`;
+    if (!confirm(confirmMsg)) return;
+    setSaving(true);
+    await adicionar.mutateAsync({ numero: novoNumero, nome: colab?.nome ?? null, motivo: novoMotivo || null, apagarRegistos });
   };
 
   const handleRemover = async (numero: string, nome: string | null) => {
@@ -452,6 +461,28 @@ function SecaoExcluidos({ colaboradores }: SecaoExcluidosProps) {
               className="h-8 text-sm"
             />
           </div>
+
+          {/* Opção de apagar registos existentes */}
+          <div className="p-3 rounded-lg border border-destructive/20 bg-destructive/5 space-y-2">
+            <label className="flex items-start gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={apagarRegistos}
+                onChange={e => setApagarRegistos(e.target.checked)}
+                className="mt-0.5 rounded border-border"
+              />
+              <div>
+                <p className="text-xs font-semibold text-destructive">Apagar registos existentes na BD</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {apagarRegistos
+                    ? '⚠️ Os registos deste colaborador serão removidos permanentemente. O colaborador desaparecerá imediatamente de todas as vistas.'
+                    : 'Os registos existentes serão mantidos. O colaborador continuará visível, mas não aparecerá em futuros uploads.'
+                  }
+                </p>
+              </div>
+            </label>
+          </div>
+
           <div className="flex gap-2 justify-end">
             <Button variant="ghost" size="sm" onClick={() => setAdicionando(false)} className="text-xs">Cancelar</Button>
             <Button size="sm" onClick={handleAdicionar} disabled={saving} className="text-xs gap-1 bg-destructive hover:bg-destructive/90 text-white">

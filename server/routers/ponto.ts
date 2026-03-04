@@ -270,10 +270,22 @@ export const pontoRouter = router({
       numero: z.string().min(1),
       nome: z.string().nullable().optional(),
       motivo: z.string().nullable().optional(),
+      apagarRegistos: z.boolean().optional().default(false),
     }))
     .mutation(async ({ input }) => {
       await adicionarExcluido(input);
-      return { success: true };
+
+      let registosApagados = 0;
+      if (input.apagarRegistos) {
+        const db = await getDb();
+        if (db) {
+          const result = await db.delete(registosDiarios)
+            .where(eq(registosDiarios.numero, input.numero));
+          registosApagados = result[0]?.affectedRows ?? 0;
+        }
+      }
+
+      return { success: true, registosApagados };
     }),
 
   // Remover colaborador da lista de excluídos
