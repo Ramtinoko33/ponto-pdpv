@@ -261,7 +261,7 @@ function LinhaRegistoEditavel({ registo: r, onSaved }: LinhaRegistoEditavelProps
         <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
           isEdited ? "bg-purple-500/15 text-purple-400" :
           r.cenario === "JUST" ? "bg-sky-500/15 text-sky-400" :
-          r.cenario === "DOM" ? "bg-muted text-muted-foreground" :
+          r.cenario === "DOM" ? "bg-zinc-500/15 text-zinc-400" :
           "bg-muted/50 text-muted-foreground"
         }`}>
           {r.cenario ?? "—"}

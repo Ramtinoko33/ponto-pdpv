@@ -17,7 +17,7 @@ function fmtMin(min: number, showSign = true) {
 }
 
 function SaldoBadge({ min }: { min: number }) {
-  const cls = min > 0 ? 'text-emerald-600' : min < 0 ? 'text-red-600' : 'text-muted-foreground';
+  const cls = min > 0 ? 'text-emerald-400' : min < 0 ? 'text-red-400' : 'text-muted-foreground';
   return <span className={`font-bold mono text-sm ${cls}`}>{fmtMin(min)}</span>;
 }
 
@@ -65,12 +65,12 @@ export default function VistaMensal({ mesId, meses, onSelectMes }: { mesId: numb
       {/* Cards de resumo */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {[
-          { label: 'Saldo Geral', value: fmtMin(totSaldo), color: totSaldo >= 0 ? 'text-emerald-600' : 'text-red-600', icon: <TrendingUp className="w-4 h-4" /> },
-          { label: 'Atrasos Entrada', value: fmtMin(-totAtraso, false), color: 'text-red-600', icon: <TrendingDown className="w-4 h-4" /> },
-          { label: 'Excesso Almoço', value: fmtMin(-totAlm, false), color: 'text-orange-600', icon: <Clock className="w-4 h-4" /> },
-          { label: 'Saída Antecipada', value: fmtMin(-totCedo, false), color: 'text-red-600', icon: <TrendingDown className="w-4 h-4" /> },
-          { label: 'Horas Extra', value: fmtMin(totExtra, false), color: 'text-emerald-600', icon: <TrendingUp className="w-4 h-4" /> },
-          { label: 'Total Extra €', value: totExtraEuros > 0 ? `${totExtraEuros.toFixed(2)}€` : '—', color: 'text-emerald-700 font-semibold', icon: <span className="font-bold text-xs">€</span> },
+          { label: 'Saldo Geral', value: fmtMin(totSaldo), color: totSaldo >= 0 ? 'text-emerald-400' : 'text-red-400', icon: <TrendingUp className="w-4 h-4" /> },
+          { label: 'Atrasos Entrada', value: fmtMin(-totAtraso, false), color: 'text-red-400', icon: <TrendingDown className="w-4 h-4" /> },
+          { label: 'Excesso Almoço', value: fmtMin(-totAlm, false), color: 'text-orange-400', icon: <Clock className="w-4 h-4" /> },
+          { label: 'Saída Antecipada', value: fmtMin(-totCedo, false), color: 'text-red-400', icon: <TrendingDown className="w-4 h-4" /> },
+          { label: 'Horas Extra', value: fmtMin(totExtra, false), color: 'text-emerald-400', icon: <TrendingUp className="w-4 h-4" /> },
+          { label: 'Total Extra €', value: totExtraEuros > 0 ? `${totExtraEuros.toFixed(2)}€` : '—', color: 'text-emerald-300', icon: <span className="font-bold text-xs">€</span> },
         ].map((c, i) => (
           <Card key={i}>
             <CardContent className="p-4">
@@ -124,11 +124,11 @@ export default function VistaMensal({ mesId, meses, onSelectMes }: { mesId: numb
                       <th className="text-center px-2 py-2.5 font-semibold text-muted-foreground">Dias Trab.</th>
                       <th className="text-center px-2 py-2.5 font-semibold text-muted-foreground">Dias Just.</th>
                       <th className="text-center px-2 py-2.5 font-semibold text-muted-foreground">Cél. Auto</th>
-                      <th className="text-center px-2 py-2.5 font-semibold text-red-600">Atrasos</th>
-                      <th className="text-center px-2 py-2.5 font-semibold text-orange-600">Exc. Almoço</th>
-                      <th className="text-center px-2 py-2.5 font-semibold text-red-600">Saída Cedo</th>
-                      <th className="text-center px-2 py-2.5 font-semibold text-emerald-600">Horas Extra</th>
-                      <th className="text-center px-2 py-2.5 font-semibold text-emerald-700">Extra €</th>
+                      <th className="text-center px-2 py-2.5 font-semibold text-red-400">Atrasos</th>
+                      <th className="text-center px-2 py-2.5 font-semibold text-orange-400">Exc. Almoço</th>
+                      <th className="text-center px-2 py-2.5 font-semibold text-red-400">Saída Cedo</th>
+                      <th className="text-center px-2 py-2.5 font-semibold text-emerald-400">Horas Extra</th>
+                      <th className="text-center px-2 py-2.5 font-semibold text-emerald-300">Extra €</th>
                       <th className="text-center px-2 py-2.5 font-semibold text-foreground">Saldo Total</th>
                       <th className="text-center px-2 py-2.5 font-semibold text-muted-foreground">Saldo (min)</th>
                       <th className="px-2 py-2.5"></th>
@@ -143,13 +143,13 @@ export default function VistaMensal({ mesId, meses, onSelectMes }: { mesId: numb
                         >
                           <td className="px-3 py-2 font-medium">{r.nome}</td>
                           <td className="px-2 py-2 text-center mono">{r.diasTrab}</td>
-                          <td className="px-2 py-2 text-center mono text-blue-600">{r.diasJust || '—'}</td>
-                          <td className="px-2 py-2 text-center mono text-amber-600">{r.celulasAuto || '—'}</td>
-                          <td className="px-2 py-2 text-center mono text-red-600">{r.atrasoEn > 0 ? `-${fmtMin(r.atrasoEn, false)}` : '—'}</td>
-                          <td className="px-2 py-2 text-center mono text-orange-600">{r.excessoAlm > 0 ? `-${fmtMin(r.excessoAlm, false)}` : '—'}</td>
-                          <td className="px-2 py-2 text-center mono text-red-600">{r.saidaCedo > 0 ? `-${fmtMin(r.saidaCedo, false)}` : '—'}</td>
-                          <td className="px-2 py-2 text-center mono text-emerald-600">{r.extraSa > 0 ? `+${fmtMin(r.extraSa, false)}` : '—'}</td>
-                          <td className="px-2 py-2 text-center mono text-emerald-700 font-semibold">
+                          <td className="px-2 py-2 text-center mono text-blue-400">{r.diasJust || '—'}</td>
+                          <td className="px-2 py-2 text-center mono text-yellow-400">{r.celulasAuto || '—'}</td>
+                          <td className="px-2 py-2 text-center mono text-red-400">{r.atrasoEn > 0 ? `-${fmtMin(r.atrasoEn, false)}` : '—'}</td>
+                          <td className="px-2 py-2 text-center mono text-orange-400">{r.excessoAlm > 0 ? `-${fmtMin(r.excessoAlm, false)}` : '—'}</td>
+                          <td className="px-2 py-2 text-center mono text-red-400">{r.saidaCedo > 0 ? `-${fmtMin(r.saidaCedo, false)}` : '—'}</td>
+                          <td className="px-2 py-2 text-center mono text-emerald-400">{r.extraSa > 0 ? `+${fmtMin(r.extraSa, false)}` : '—'}</td>
+                          <td className="px-2 py-2 text-center mono text-emerald-300 font-semibold">
                             {((r.extra10Min ?? 0) + (r.extra15Min ?? 0)) > 0
                               ? `${(((r.extra10Min ?? 0) / 60) * 10 + ((r.extra15Min ?? 0) / 60) * 15).toFixed(2)}€`
                               : '—'}
@@ -162,7 +162,7 @@ export default function VistaMensal({ mesId, meses, onSelectMes }: { mesId: numb
                               <Link
                                 href={`/colaborador/${r.numero}`}
                                 onClick={e => e.stopPropagation()}
-                                className="text-primary hover:text-primary/80 transition-colors"
+                                className="text-cyan-400 hover:text-cyan-300 transition-colors"
                                 title="Ver perfil completo"
                               >
                                 <ExternalLink className="w-3.5 h-3.5" />
@@ -192,10 +192,10 @@ export default function VistaMensal({ mesId, meses, onSelectMes }: { mesId: numb
                                       <tr key={d.id} className={`border-t border-border/30 ${d.justificacao ? 'bg-blue-500/5' : ''}`}>
                                         <td className="py-1 pr-3 mono">{d.data.split(' ')[0]}</td>
                                         <td className="py-1 pr-3 text-muted-foreground">{d.diaSemana}</td>
-                                        <td className={`py-1 pr-3 text-center mono ${d.en1Auto ? 'text-amber-600 italic' : 'text-foreground'}`}>{d.en1 ?? '—'}</td>
-                                        <td className={`py-1 pr-3 text-center mono ${d.sa1Auto ? 'text-amber-600 italic' : 'text-foreground'}`}>{d.sa1 ?? '—'}</td>
-                                        <td className={`py-1 pr-3 text-center mono ${d.en2Auto ? 'text-amber-600 italic' : 'text-foreground'}`}>{d.en2 ?? '—'}</td>
-                                        <td className={`py-1 pr-3 text-center mono ${d.sa2Auto ? 'text-amber-600 italic' : 'text-foreground'}`}>{d.sa2 ?? '—'}</td>
+                                        <td className={`py-1 pr-3 text-center mono ${d.en1Auto ? 'text-yellow-300 italic' : ''}`}>{d.en1 ?? '—'}</td>
+                                        <td className={`py-1 pr-3 text-center mono ${d.sa1Auto ? 'text-yellow-300 italic' : ''}`}>{d.sa1 ?? '—'}</td>
+                                        <td className={`py-1 pr-3 text-center mono ${d.en2Auto ? 'text-yellow-300 italic' : ''}`}>{d.en2 ?? '—'}</td>
+                                        <td className={`py-1 pr-3 text-center mono ${d.sa2Auto ? 'text-yellow-300 italic' : ''}`}>{d.sa2 ?? '—'}</td>
                                         <td className="py-1 pr-3 text-center">
                                           {d.saldo !== null ? <SaldoBadge min={d.saldo} /> : <span className="text-blue-400">{d.justificacao}</span>}
                                         </td>
@@ -214,12 +214,12 @@ export default function VistaMensal({ mesId, meses, onSelectMes }: { mesId: numb
                     <tr className="bg-card border-t-2 border-border font-bold">
                       <td className="px-3 py-2.5 text-foreground">TOTAL</td>
                       <td className="px-2 py-2.5 text-center mono">{resumo.reduce((a, r) => a + r.diasTrab, 0)}</td>
-                      <td className="px-2 py-2.5 text-center mono text-blue-600">{resumo.reduce((a, r) => a + r.diasJust, 0)}</td>
-                      <td className="px-2 py-2.5 text-center mono text-amber-600">{resumo.reduce((a, r) => a + r.celulasAuto, 0)}</td>
-                      <td className="px-2 py-2.5 text-center mono text-red-600">{totAtraso > 0 ? `-${fmtMin(totAtraso, false)}` : '—'}</td>
-                      <td className="px-2 py-2.5 text-center mono text-orange-600">{totAlm > 0 ? `-${fmtMin(totAlm, false)}` : '—'}</td>
-                      <td className="px-2 py-2.5 text-center mono text-red-600">{totCedo > 0 ? `-${fmtMin(totCedo, false)}` : '—'}</td>
-                      <td className="px-2 py-2.5 text-center mono text-emerald-600">{totExtra > 0 ? `+${fmtMin(totExtra, false)}` : '—'}</td>
+                      <td className="px-2 py-2.5 text-center mono text-blue-400">{resumo.reduce((a, r) => a + r.diasJust, 0)}</td>
+                      <td className="px-2 py-2.5 text-center mono text-yellow-400">{resumo.reduce((a, r) => a + r.celulasAuto, 0)}</td>
+                      <td className="px-2 py-2.5 text-center mono text-red-400">{totAtraso > 0 ? `-${fmtMin(totAtraso, false)}` : '—'}</td>
+                      <td className="px-2 py-2.5 text-center mono text-orange-400">{totAlm > 0 ? `-${fmtMin(totAlm, false)}` : '—'}</td>
+                      <td className="px-2 py-2.5 text-center mono text-red-400">{totCedo > 0 ? `-${fmtMin(totCedo, false)}` : '—'}</td>
+                      <td className="px-2 py-2.5 text-center mono text-emerald-400">{totExtra > 0 ? `+${fmtMin(totExtra, false)}` : '—'}</td>
                       <td className="px-2 py-2.5 text-center"><SaldoBadge min={totSaldo} /></td>
                       <td className="px-2 py-2.5 text-center mono text-muted-foreground">{totSaldo > 0 ? `+${totSaldo}` : totSaldo}</td>
                       <td></td>
@@ -256,14 +256,14 @@ export default function VistaMensal({ mesId, meses, onSelectMes }: { mesId: numb
                         <td className="px-3 py-1.5 mono whitespace-nowrap">{r.data.split(' ')[0]}</td>
                         <td className="px-3 py-1.5 text-muted-foreground">{r.diaSemana}</td>
                         <td className="px-3 py-1.5 text-muted-foreground">{r.horario}</td>
-                        <td className={`px-3 py-1.5 mono ${r.en1Auto ? 'text-amber-600 italic' : 'text-foreground'}`}>{r.en1 ?? '—'}</td>
-                        <td className={`px-3 py-1.5 mono ${r.sa1Auto ? 'text-amber-600 italic' : 'text-foreground'}`}>{r.sa1 ?? '—'}</td>
-                        <td className={`px-3 py-1.5 mono ${r.en2Auto ? 'text-amber-600 italic' : 'text-foreground'}`}>{r.en2 ?? '—'}</td>
-                        <td className={`px-3 py-1.5 mono ${r.sa2Auto ? 'text-amber-600 italic' : 'text-foreground'}`}>{r.sa2 ?? '—'}</td>
+                        <td className={`px-3 py-1.5 mono ${r.en1Auto ? 'text-yellow-300 italic' : ''}`}>{r.en1 ?? '—'}</td>
+                        <td className={`px-3 py-1.5 mono ${r.sa1Auto ? 'text-yellow-300 italic' : ''}`}>{r.sa1 ?? '—'}</td>
+                        <td className={`px-3 py-1.5 mono ${r.en2Auto ? 'text-yellow-300 italic' : ''}`}>{r.en2 ?? '—'}</td>
+                        <td className={`px-3 py-1.5 mono ${r.sa2Auto ? 'text-yellow-300 italic' : ''}`}>{r.sa2 ?? '—'}</td>
                         <td className="px-3 py-1.5">{r.saldo !== null ? <SaldoBadge min={r.saldo} /> : '—'}</td>
                         <td className="px-3 py-1.5 text-muted-foreground mono">{r.cenario}</td>
                         <td className="px-3 py-1.5 text-muted-foreground max-w-xs truncate">{r.detalhe}</td>
-                        <td className="px-3 py-1.5 text-blue-600">{r.justificacao ?? ''}</td>
+                        <td className="px-3 py-1.5 text-blue-400">{r.justificacao ?? ''}</td>
                       </tr>
                     ))}
                   </tbody>
