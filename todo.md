@@ -92,3 +92,16 @@
 - [x] Corrigir calcularHorasExtra: se extraSaMin > 30, TODOS os minutos a 15€/h (não 30@10€ + resto@15€)
 - [x] Excesso de almoço: sempre 10€/h, nunca somado à saída para efeitos de tarifa
 - [x] Recalcular todos os registos na BD com a lógica corrigida (477 registos)
+
+## Correção Lógica Horas Extra v2
+- [ ] @10€/h = almoço curto + saída entre 18:30 e 19:00 (somados)
+- [ ] @15€/h = saída após 19:00 (minutos após 19:00 apenas)
+- [ ] Recalcular todos os registos na BD com a lógica corrigida
+
+## Redesign Visual — Tema Claro
+- [ ] Mudar tema para fundo claro (branco/cinza claro)
+- [ ] Azul marinho como cor primária (sidebar, cabeçalhos, botões)
+- [ ] Amarelo como cor de destaque/accent
+- [ ] Verde para indicadores positivos (saldo positivo, horas extra)
+- [ ] Atualizar index.css com as novas variáveis de cor
+- [ ] Garantir legibilidade em todas as páginas

@@ -176,23 +176,27 @@ function preencherAutomatico(
   return { en1: en1Raw, sa1: sa1Raw, en2: en2Raw, sa2: sa2Raw, en1Auto: false, sa1Auto: false, en2Auto: false, sa2Auto: false, cenario: 'A' };
 }
 
-// ─── CÁLCULO DE HORAS EXTRA ────────────────────────────────────────────────
-// Regras:
-//   - Saída esperada: 18:30 (dias úteis) ou 13:00 (sábados)
-//   - Minutos extra até +30min após saída esperada: 10€/hora
-//   - Minutos extra acima de +30min: 15€/hora
-// Retorna { extra10Min, extra15Min }
-// Regra: se extraSaMin <= 30 min → tudo a 10€/h
-//        se extraSaMin >  30 min → TODOS os minutos a 15€/h (não há divisão)
-// O excesso de almoço é SEMPRE 10€/h e não se soma à saída para efeitos de tarifa
-function calcularHorasExtra(extraSaMin: number, _isSabado: boolean): { extra10Min: number; extra15Min: number } {
+/// ─── CÁLCULO DE HORAS EXTRA ──────────────────────────────────────────────
+// Regras (dias úteis):
+//   @10€/h = almoço curto (minutos poupados no almoço) + saída entre 18:30 e 19:00
+//   @15€/h = minutos de saída APÓS as 19:00 (quando sa2 > 19:00)
+// Regras (sábados):
+//   @10€/h = saída entre 13:00 e 13:30
+//   @15€/h = minutos de saída APÓS as 13:30
+// NOTA: almoço curto e saída até ao limiar somam-se para @10€/h
+//       saída após o limiar é SEMPRE @15€/h (independente do almoço)
+// Esta função calcula apenas a componente de saída (sem almoço)
+function calcularExtraSaida(extraSaMin: number): { extra10Min: number; extra15Min: number } {
+  // Regra CONFIRMADA:
+  //   Se saída <= 30min após hora esperada (não passa 19:00/13:30): TODOS os min a 10€/h
+  //   Se saída >  30min após hora esperada (passa 19:00/13:30): TODOS os min a 15€/h
+  // O almoço curto é SEMPRE 10€/h e calculado separadamente no calcularSaldo
   if (extraSaMin <= 0) return { extra10Min: 0, extra15Min: 0 };
-  const LIMIAR = 30; // minutos — ponto de mudança de tarifa
+  const LIMIAR = 30;
   if (extraSaMin <= LIMIAR) {
-    // Até 30min extra: todos os minutos a 10€/h
     return { extra10Min: extraSaMin, extra15Min: 0 };
   } else {
-    // Mais de 30min extra: TODOS os minutos a 15€/h
+    // Passou o limiar: TODOS os minutos de saída a 15€/h
     return { extra10Min: 0, extra15Min: extraSaMin };
   }
 }
@@ -222,7 +226,7 @@ export function calcularSaldo(
     const tardeSa1 = sa1m - (13 * 60);
     if (tardeSa1 > 0) {
       extraSa = tardeSa1;
-      const ex = calcularHorasExtra(tardeSa1, true);
+      const ex = calcularExtraSaida(tardeSa1);
       extra10Min = ex.extra10Min; extra15Min = ex.extra15Min;
       const partes: string[] = [];
       if (ex.extra10Min > 0) partes.push(`${ex.extra10Min}min@10€`);
@@ -248,6 +252,7 @@ export function calcularSaldo(
   }
 
   // Almoço (SA1 → EN2)
+  let almocoCurtoMin = 0;
   if (sa1m !== null && en2m !== null) {
     const almReal = en2m - sa1m;
     const diffAlm = almReal - ALMOCO;
@@ -255,7 +260,9 @@ export function calcularSaldo(
       excessoAlm = diffAlm;
       detalhes.push(`Almoço longo -${fmtTime(diffAlm)}`);
     } else if (diffAlm < 0) {
-      detalhes.push(`Almoço curto +${fmtTime(Math.abs(diffAlm))}`);
+      // Almoço curto: minutos poupados são pagos a 10€/h
+      almocoCurtoMin = Math.abs(diffAlm);
+      detalhes.push(`Almoço curto +${fmtTime(almocoCurtoMin)}`);
     }
   }
 
@@ -264,16 +271,28 @@ export function calcularSaldo(
     const tardeSa2 = sa2m - SA2_ESP;
     if (tardeSa2 > 0) {
       extraSa = tardeSa2;
-      const ex = calcularHorasExtra(tardeSa2, false);
-      extra10Min = ex.extra10Min; extra15Min = ex.extra15Min;
+      const ex = calcularExtraSaida(tardeSa2);
+      // @10€/h = almoço curto + saída até ao limiar (30min)
+      // @15€/h = saída após o limiar (independente do almoço)
+      extra10Min = almocoCurtoMin + ex.extra10Min;
+      extra15Min = ex.extra15Min;
       const partes: string[] = [];
-      if (ex.extra10Min > 0) partes.push(`${ex.extra10Min}min@10€`);
-      if (ex.extra15Min > 0) partes.push(`${ex.extra15Min}min@15€`);
+      if (almocoCurtoMin > 0) partes.push(`${almocoCurtoMin}min almoço@10€`);
+      if (ex.extra10Min > 0) partes.push(`${ex.extra10Min}min saída@10€`);
+      if (ex.extra15Min > 0) partes.push(`${ex.extra15Min}min saída@15€`);
       detalhes.push(`Saída tarde +${fmtTime(tardeSa2)} (${partes.join(' + ')})`);
     } else if (tardeSa2 < 0) {
       saidaCedo = Math.abs(tardeSa2);
+      // Mesmo sem saída tarde, o almoço curto é pago a 10€/h
+      extra10Min = almocoCurtoMin;
       detalhes.push(`Saída cedo ${fmtTime(tardeSa2)}`);
+    } else {
+      // Saída exata às 18:30 — almoço curto ainda é pago
+      extra10Min = almocoCurtoMin;
     }
+  } else {
+    // Sem saída registada — almoço curto ainda é pago
+    extra10Min = almocoCurtoMin;
   }
 
   // Saldo total

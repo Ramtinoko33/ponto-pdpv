@@ -1,0 +1,14 @@
+{
+  "query": "SELECT numero, nome FROM registos_diarios WHERE nome LIKE '%Queiros%' LIMIT 1",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3Ty6CDLv92wY6J1.6f46bdfa6ab1 --database 8Y4DxzppMuUZV4opNedwrj --execute SELECT numero, nome FROM registos_diarios WHERE nome LIKE '%Queiros%' LIMIT 1",
+  "rows": [
+    {
+      "numero": "40",
+      "nome": "Pedro Queiros"
+    }
+  ],
+  "messages": [],
+  "stdout": "numero\tnome\n40\tPedro Queiros\n",
+  "stderr": "",
+  "execution_time_ms": 59
+}
