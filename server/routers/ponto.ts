@@ -24,11 +24,14 @@ import {
   adicionarExcluido,
   removerExcluido,
   getSetExcluidos,
+  getMapaExtraManual,
+  setExtraManual as dbSetExtraManual,
 } from "../pontoDB";
 import { getDb } from "../db";
 import { registosDiarios } from "../../drizzle/schema";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { calcularSaldo } from "../pontoEngine";
+import { calcularResumoMonetario, eurosPaCentimos } from "../monetario";
 
 const MESES_PT = [
   '', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -74,11 +77,12 @@ export const pontoRouter = router({
       return getRegistosPorMes(input.mesId);
     }),
 
-  // Resumo por colaborador num mês
+  // Resumo por colaborador num mês (inclui extraManualEuros e totalDinheiroPagar)
   getResumoMes: publicProcedure
     .input(z.object({ mesId: z.number().int() }))
     .query(async ({ input }) => {
       const registos = await getRegistosPorMes(input.mesId);
+      const mapaExtra = await getMapaExtraManual(input.mesId);
       // Agrupar por colaborador
       const map = new Map<string, {
         numero: string; nome: string; diasTrab: number; diasJust: number;
@@ -104,7 +108,14 @@ export const pontoRouter = router({
           res.celulasAuto += (r.en1Auto ? 1 : 0) + (r.sa1Auto ? 1 : 0) + (r.en2Auto ? 1 : 0) + (r.sa2Auto ? 1 : 0);
         }
       }
-      return Array.from(map.values()).sort((a, b) => parseInt(a.numero) - parseInt(b.numero));
+      // Enriquecer com extra manual e totais monetários
+      return Array.from(map.values())
+        .sort((a, b) => parseInt(a.numero) - parseInt(b.numero))
+        .map(res => {
+          const extraManualCentimos = mapaExtra[res.numero] ?? 0;
+          const monetario = calcularResumoMonetario(res.extra10Min, res.extra15Min, extraManualCentimos);
+          return { ...res, ...monetario };
+        });
     }),
 
   // Resumo acumulado (todos os meses)
@@ -308,5 +319,36 @@ export const pontoRouter = router({
         .where(eq(registosDiarios.numero, input.numero));
       const registosApagados = result[0]?.affectedRows ?? 0;
       return { success: true, registosApagados };
+    }),
+
+  // ─── EXTRA MANUAL ────────────────────────────────────────────────────────────
+
+  // Guardar extra manual (em euros) para um colaborador num mês
+  setExtraManual: publicProcedure
+    .input(z.object({
+      numero: z.string().min(1),
+      mesId: z.number().int(),
+      extraManualEuros: z.number()
+        .nonnegative('O valor não pode ser negativo')
+        .finite('O valor deve ser finito')
+        .refine(v => !isNaN(v), 'O valor não pode ser NaN'),
+    }))
+    .mutation(async ({ input }) => {
+      const centimos = eurosPaCentimos(input.extraManualEuros);
+      await dbSetExtraManual(input.numero, input.mesId, centimos);
+      return { success: true, centimos };
+    }),
+
+  // Obter extra manual de todos os colaboradores de um mês (em euros)
+  getExtraManualMes: publicProcedure
+    .input(z.object({ mesId: z.number().int() }))
+    .query(async ({ input }) => {
+      const mapa = await getMapaExtraManual(input.mesId);
+      // Converter cêntimos para euros
+      const resultado: Record<string, number> = {};
+      for (const [numero, centimos] of Object.entries(mapa)) {
+        resultado[numero] = centimos / 100;
+      }
+      return resultado;
     }),
 });

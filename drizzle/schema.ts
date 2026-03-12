@@ -100,3 +100,19 @@ export const colaboradoresExcluidos = mysqlTable("colaboradores_excluidos", {
 
 export type ColaboradorExcluido = typeof colaboradoresExcluidos.$inferSelect;
 export type InsertColaboradorExcluido = typeof colaboradoresExcluidos.$inferInsert;
+
+// ─── Extra manual por colaborador/mês ─────────────────────────────────────────
+// Armazena o valor extra manual em cêntimos (ex: 1250 = 12.50€) para evitar
+// problemas de ponto flutuante. A conversão para euros é feita no servidor.
+export const extraManual = mysqlTable("extra_manual", {
+  id: int("id").autoincrement().primaryKey(),
+  numero: varchar("numero", { length: 10 }).notNull(),
+  mesId: int("mesId").notNull(),
+  // Valor em cêntimos (inteiro) para evitar floating-point issues
+  // Ex: 1250 = 12.50€, 0 = 0.00€
+  extraManualCentimos: int("extraManualCentimos").notNull().default(0),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ExtraManual = typeof extraManual.$inferSelect;
+export type InsertExtraManual = typeof extraManual.$inferInsert;

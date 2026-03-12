@@ -409,3 +409,66 @@ export async function getSetExcluidos(): Promise<Set<string>> {
   const todos = await listarExcluidos();
   return new Set(todos.map(e => e.numero));
 }
+
+// ─── EXTRA MANUAL POR COLABORADOR/MÊS ────────────────────────────────────────
+// Valores armazenados em cêntimos (inteiros) para evitar floating-point issues.
+// Ex: 1250 = 12.50€
+
+import { extraManual } from "../drizzle/schema";
+
+/**
+ * Obtém o valor extra manual (em cêntimos) para um colaborador num mês.
+ * Retorna 0 se não existir registo.
+ */
+export async function getExtraManual(numero: string, mesId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("DB não disponível");
+  const rows = await db
+    .select()
+    .from(extraManual)
+    .where(and(eq(extraManual.numero, numero), eq(extraManual.mesId, mesId)));
+  return rows[0]?.extraManualCentimos ?? 0;
+}
+
+/**
+ * Obtém um mapa de extra manual para todos os colaboradores de um mês.
+ * Retorna Record<numero, centimos>
+ */
+export async function getMapaExtraManual(mesId: number): Promise<Record<string, number>> {
+  const db = await getDb();
+  if (!db) throw new Error("DB não disponível");
+  const rows = await db
+    .select()
+    .from(extraManual)
+    .where(eq(extraManual.mesId, mesId));
+  const mapa: Record<string, number> = {};
+  for (const r of rows) {
+    mapa[r.numero] = r.extraManualCentimos;
+  }
+  return mapa;
+}
+
+/**
+ * Guarda ou atualiza o valor extra manual (em cêntimos) para um colaborador num mês.
+ */
+export async function setExtraManual(
+  numero: string,
+  mesId: number,
+  extraManualCentimos: number
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("DB não disponível");
+  // Verificar se já existe
+  const existing = await db
+    .select({ id: extraManual.id })
+    .from(extraManual)
+    .where(and(eq(extraManual.numero, numero), eq(extraManual.mesId, mesId)));
+  if (existing.length > 0) {
+    await db
+      .update(extraManual)
+      .set({ extraManualCentimos })
+      .where(and(eq(extraManual.numero, numero), eq(extraManual.mesId, mesId)));
+  } else {
+    await db.insert(extraManual).values({ numero, mesId, extraManualCentimos });
+  }
+}

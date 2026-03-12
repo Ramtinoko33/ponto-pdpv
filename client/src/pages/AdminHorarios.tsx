@@ -4,12 +4,13 @@
  */
 
 import { useState } from 'react';
+import { Link } from 'wouter';
 import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import {
-  Clock, Plus, Trash2, Save, RefreshCw, AlertCircle, CheckCircle2, Settings, UserX, UserCheck
+  Clock, Plus, Trash2, Save, RefreshCw, AlertCircle, CheckCircle2, Settings, UserX, UserCheck, ArrowLeft
 } from 'lucide-react';
 
 // ─── Utilitários ─────────────────────────────────────────────────────────────
@@ -589,6 +590,9 @@ export default function AdminHorarios() {
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container py-4 flex items-center gap-3">
+          <Link href="/" className="p-1.5 rounded hover:bg-card transition-colors text-muted-foreground hover:text-foreground" title="Voltar ao início">
+            <ArrowLeft className="w-4 h-4" />
+          </Link>
           <div className="w-8 h-8 rounded bg-primary/20 border border-primary/30 flex items-center justify-center">
             <Clock className="w-4 h-4 text-primary" />
           </div>

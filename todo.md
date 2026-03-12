@@ -105,3 +105,23 @@
 - [ ] Verde para indicadores positivos (saldo positivo, horas extra)
 - [ ] Atualizar index.css com as novas variáveis de cor
 - [ ] Garantir legibilidade em todas as páginas
+
+## Campo Extra Manual e Total a Pagar
+- [x] BD: nova tabela extra_manual (numero, mesId, extraManualEuros, updatedAt)
+- [x] BD: migrar schema com pnpm db:push
+- [x] Backend: helper calcularTotalDinheiro(extra10Min, extra15Min, extraManualEuros)
+- [x] Backend: procedure getResumoMes — incluir extraManualEuros e totalDinheiroPagar
+- [x] Backend: procedure setExtraManual — guardar extraManualEuros por colaborador/mês
+- [x] Frontend VistaMensal: coluna "Extra manual (€)" editável inline
+- [x] Frontend VistaMensal: coluna "Total a pagar" como última coluna
+- [x] Frontend VistaMensal: botão "Download Excel"
+- [x] Exportação Excel: colunas Funcionário, Período, Horas extra, Dinheiro horas extra, Extra manual, Total a pagar
+- [x] Testes: cálculo monetário (extraManualEuros, totalDinheiroPagar, edge cases)
+- [x] Testes: negócio (Excel bate certo, ordem de colunas, editar extra não altera horas)
+
+## Botão de Retroceder
+- [ ] Componente BackButton reutilizável com fallback por tipo de página
+- [ ] BackButton em DetalheColaborador (fallback → /colaborador/:numero)
+- [ ] BackButton em PerfilColaborador (fallback → página principal)
+- [x] BackButton em AdminHorarios (fallback → página principal)
+- [ ] Testes: navegação com histórico e sem histórico (fallback)
