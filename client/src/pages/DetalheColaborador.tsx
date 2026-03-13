@@ -101,9 +101,9 @@ function CelulaEditavel({ valor, isAuto, isEditing, editValue, onChange, label }
 interface LinhaRegistoEditavelProps {
   registo: any;
   onSaved: () => void;
+  regraEspecialAtiva?: boolean;
 }
-
-function LinhaRegistoEditavel({ registo: r, onSaved }: LinhaRegistoEditavelProps) {
+function LinhaRegistoEditavel({ registo: r, onSaved, regraEspecialAtiva = false }: LinhaRegistoEditavelProps) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [vals, setVals] = useState({
@@ -227,32 +227,62 @@ function LinhaRegistoEditavel({ registo: r, onSaved }: LinhaRegistoEditavelProps
         )}
       </td>
 
-      {/* Extra @10€ */}
+       {/* Extra @10€ — quando RE ativa, mostra almoço curto */}
       <td className="px-2 py-1.5 text-center">
-        {!isJust && (r.extra10Min ?? 0) > 0 ? (
-          <span className="font-mono text-xs text-emerald-500">{r.extra10Min}min</span>
+        {regraEspecialAtiva ? (
+          // RE: mostrar almoço curto (excessoAlm negativo = almoço mais curto)
+          !isJust && r.excessoAlm < 0 ? (
+            <span className="font-mono text-xs text-amber-400" title="Almoço curto (RE)">{-r.excessoAlm}min ☀️</span>
+          ) : (
+            <span className="text-muted-foreground/30 text-xs">—</span>
+          )
         ) : (
-          <span className="text-muted-foreground/30 text-xs">—</span>
+          !isJust && (r.extra10Min ?? 0) > 0 ? (
+            <span className="font-mono text-xs text-emerald-500">{r.extra10Min}min</span>
+          ) : (
+            <span className="text-muted-foreground/30 text-xs">—</span>
+          )
         )}
       </td>
-
-      {/* Extra @15€ */}
+      {/* Extra @15€ — quando RE ativa, mostra saída tarde */}
       <td className="px-2 py-1.5 text-center">
-        {!isJust && (r.extra15Min ?? 0) > 0 ? (
-          <span className="font-mono text-xs text-emerald-400">{r.extra15Min}min</span>
+        {regraEspecialAtiva ? (
+          !isJust && r.extraSa > 0 ? (
+            <span className="font-mono text-xs text-emerald-400" title="Saída tarde (RE)">{r.extraSa}min</span>
+          ) : (
+            <span className="text-muted-foreground/30 text-xs">—</span>
+          )
         ) : (
-          <span className="text-muted-foreground/30 text-xs">—</span>
+          !isJust && (r.extra15Min ?? 0) > 0 ? (
+            <span className="font-mono text-xs text-emerald-400">{r.extra15Min}min</span>
+          ) : (
+            <span className="text-muted-foreground/30 text-xs">—</span>
+          )
         )}
       </td>
-
       {/* Valor Extra € */}
       <td className="px-2 py-1.5 text-center">
-        {!isJust && ((r.extra10Min ?? 0) + (r.extra15Min ?? 0)) > 0 ? (
-          <span className="font-mono text-xs font-semibold text-emerald-400">
-            {(((r.extra10Min ?? 0) / 60) * 10 + ((r.extra15Min ?? 0) / 60) * 15).toFixed(2)}€
-          </span>
-        ) : (
-          <span className="text-muted-foreground/30 text-xs">—</span>
+        {regraEspecialAtiva ? (() => {
+          if (isJust) return <span className="text-muted-foreground/30 text-xs">—</span>;
+          const almCurto = r.excessoAlm < 0 ? -r.excessoAlm : 0;
+          const totalMin = Math.max(0, almCurto + (r.extraSa ?? 0));
+          if (totalMin === 0) return <span className="text-muted-foreground/30 text-xs">—</span>;
+          const tarifa = totalMin <= 30 ? 10 : 15;
+          const valor = (totalMin / 60) * tarifa;
+          return (
+            <span className="font-mono text-xs font-semibold text-emerald-400" title={`${totalMin}min × ${tarifa}€/h = ${valor.toFixed(2)}€`}>
+              <span className="text-[9px] text-amber-400 mr-0.5">⚡{totalMin}min@{tarifa}€</span>
+              {valor.toFixed(2)}€
+            </span>
+          );
+        })() : (
+          !isJust && ((r.extra10Min ?? 0) + (r.extra15Min ?? 0)) > 0 ? (
+            <span className="font-mono text-xs font-semibold text-emerald-400">
+              {(((r.extra10Min ?? 0) / 60) * 10 + ((r.extra15Min ?? 0) / 60) * 15).toFixed(2)}€
+            </span>
+          ) : (
+            <span className="text-muted-foreground/30 text-xs">—</span>
+          )
         )}
       </td>
 
@@ -471,6 +501,13 @@ export default function DetalheColaborador() {
           </div>
         </div>
 
+        {/* Banner Regra Especial ativa */}
+        {regraEspecialAtiva && (
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-xs text-amber-400">
+            <Zap className="w-3.5 h-3.5 flex-shrink-0" />
+            <span><strong>Regra Especial ativa</strong> — Valor calculado como: Almoço curto + Saída tarde; se total ≤30min → @10€/h; se ≥31min → @15€/h (todos os minutos)</span>
+          </div>
+        )}
         {/* Cards de resumo */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {[
@@ -478,7 +515,12 @@ export default function DetalheColaborador() {
             { icon: <Coffee className="w-4 h-4 text-orange-500" />, label: "Excesso Almoço", value: totAlm > 0 ? fmtMinAbs(totAlm) : "—", color: "text-orange-500" },
             { icon: <LogOut className="w-4 h-4 text-red-500" />, label: "Saída Antecipada", value: totCedo > 0 ? fmtMinAbs(totCedo) : "—", color: "text-red-500" },
             { icon: <Zap className="w-4 h-4 text-emerald-500" />, label: "Horas Extra", value: totExtra > 0 ? fmtMinAbs(totExtra) : "—", color: "text-emerald-500" },
-            { icon: <span className="text-emerald-400 font-bold text-xs">€€€</span>, label: "Valor Extra", value: totExtraEuros > 0 ? `${totExtraEuros.toFixed(2)}€` : "—", color: "text-emerald-400" },
+            {
+              icon: <span className={`font-bold text-xs ${regraEspecialAtiva ? 'text-amber-400' : 'text-emerald-400'}`}>€€€</span>,
+              label: regraEspecialAtiva ? '⚡ Valor Extra (RE)' : 'Valor Extra',
+              value: totExtraEuros > 0 ? `${totExtraEuros.toFixed(2)}€` : "—",
+              color: regraEspecialAtiva ? 'text-amber-400' : 'text-emerald-400',
+            },
             { icon: <Calendar className="w-4 h-4 text-sky-500" />, label: "Dias Justificados", value: diasJust > 0 ? String(diasJust) : "—", color: "text-sky-500" },
             { icon: <Info className="w-4 h-4 text-amber-500" />, label: "Células Auto", value: celulasAuto > 0 ? String(celulasAuto) : "—", color: "text-amber-500" },
           ].map((c) => (
@@ -527,9 +569,15 @@ export default function DetalheColaborador() {
                   <th className="text-center px-2 py-3 text-xs font-semibold text-muted-foreground whitespace-nowrap">2ª Entrada</th>
                   <th className="text-center px-2 py-3 text-xs font-semibold text-muted-foreground whitespace-nowrap">2ª Saída</th>
                   <th className="text-center px-2 py-3 text-xs font-semibold text-muted-foreground whitespace-nowrap">Saldo</th>
-                  <th className="text-center px-2 py-3 text-xs font-semibold text-emerald-500/70 whitespace-nowrap">@10€</th>
-                  <th className="text-center px-2 py-3 text-xs font-semibold text-emerald-400/70 whitespace-nowrap">@15€</th>
-                  <th className="text-center px-2 py-3 text-xs font-semibold text-emerald-400 whitespace-nowrap">Extra €</th>
+                  <th className="text-center px-2 py-3 text-xs font-semibold text-emerald-500/70 whitespace-nowrap" title={regraEspecialAtiva ? 'Almoço curto (RE)' : 'Minutos @10€/h'}>
+                    {regraEspecialAtiva ? <span className="text-amber-400">Alm☀️</span> : '@10€'}
+                  </th>
+                  <th className="text-center px-2 py-3 text-xs font-semibold text-emerald-400/70 whitespace-nowrap" title={regraEspecialAtiva ? 'Saída tarde (RE)' : 'Minutos @15€/h'}>
+                    {regraEspecialAtiva ? <span className="text-emerald-400">Saída</span> : '@15€'}
+                  </th>
+                  <th className="text-center px-2 py-3 text-xs font-semibold text-emerald-400 whitespace-nowrap">
+                    {regraEspecialAtiva ? <span className="text-amber-400">⚡ Extra €</span> : 'Extra €'}
+                  </th>
                   <th className="text-center px-2 py-3 text-xs font-semibold text-muted-foreground whitespace-nowrap">Cenário</th>
                   <th className="text-left px-2 py-3 text-xs font-semibold text-muted-foreground hidden lg:table-cell">Detalhe</th>
                   <th className="px-2 py-3 text-right text-xs font-semibold text-muted-foreground">Ações</th>
@@ -541,6 +589,7 @@ export default function DetalheColaborador() {
                     key={r.id}
                     registo={r}
                     onSaved={handleSaved}
+                    regraEspecialAtiva={regraEspecialAtiva}
                   />
                 ))}
               </tbody>
