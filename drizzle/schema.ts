@@ -34,6 +34,9 @@ export const meses = mysqlTable("meses", {
   totalRegistos: int("totalRegistos").notNull().default(0),
   totalColaboradores: int("totalColaboradores").notNull().default(0),
   saldoGeral: int("saldoGeral").notNull().default(0),
+  // Regra especial de cálculo: soma almoço curto + saída tarde;
+  // se total ≤ 30min → @10€/h; se total ≥ 31min → TUDO @15€/h
+  regraEspecialAtiva: int("regraEspecialAtiva").notNull().default(0),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

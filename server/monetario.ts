@@ -101,6 +101,7 @@ export interface ResumoMonetario {
 
 /**
  * Calcula o resumo monetário completo de um colaborador.
+ * Modo normal: extra10Min @10€/h + extra15Min @15€/h (separados)
  */
 export function calcularResumoMonetario(
   extra10Min: number,
@@ -114,6 +115,53 @@ export function calcularResumoMonetario(
   return {
     minutosExtra,
     horasExtraFormatadas: fmtMinutos(minutosExtra),
+    valorHorasExtraCentimos,
+    valorHorasExtra: centimosPaEuros(valorHorasExtraCentimos),
+    extraManualCentimos,
+    extraManualEuros: centimosPaEuros(extraManualCentimos),
+    totalDinheiroPagarCentimos,
+    totalDinheiroPagar: centimosPaEuros(totalDinheiroPagarCentimos),
+  };
+}
+
+/**
+ * REGRA ESPECIAL de cálculo de horas extra.
+ *
+ * Soma almoço curto (extra10Min) + saída tarde (extra10Min da tarde + extra15Min):
+ * - Se total ≤ 30 min → paga TUDO a 10€/h
+ * - Se total ≥ 31 min → paga TUDO a 15€/h
+ *
+ * Nota: almoço curto pode ser negativo (ex: almoço longo = -15min);
+ * nesse caso contribui negativamente para a soma, podendo reduzir o total.
+ * O total é sempre tratado como máximo de 0 (nunca negativo).
+ *
+ * Exemplos:
+ *   Almoço 5min + Tarde 10min = 15min ≤ 30 → 15/60*10 = 2.50€
+ *   Almoço 10min + Tarde 20min = 30min ≤ 30 → 30/60*10 = 5.00€
+ *   Almoço 12min + Tarde 19min = 31min ≥ 31 → 31/60*15 = 7.75€
+ *   Almoço 15min + Tarde 30min = 45min ≥ 31 → 45/60*15 = 11.25€
+ *   Almoço -15min + Tarde 30min = 15min ≤ 30 → 15/60*10 = 2.50€
+ *
+ * @param excessoAlmMin - minutos de almoço curto (positivo = poupou, negativo = demorou mais)
+ * @param extraSaMin - minutos de saída após hora esperada (sempre positivo)
+ * @param extraManualCentimos - extra manual em cêntimos
+ */
+export function calcularResumoMonetarioRegraEspecial(
+  excessoAlmMin: number,
+  extraSaMin: number,
+  extraManualCentimos: number
+): ResumoMonetario {
+  // Soma almoço curto + saída tarde; nunca negativo
+  const totalMin = Math.max(0, excessoAlmMin + extraSaMin);
+
+  // Aplica tarifa: ≤ 30min → @10€/h; ≥ 31min → @15€/h (TUDO)
+  const tarifa = totalMin <= 30 ? TARIFA_10_CENTIMOS : TARIFA_15_CENTIMOS;
+  const valorHorasExtraCentimos = Math.round((totalMin * tarifa) / 60);
+  const totalDinheiroPagarCentimos = valorHorasExtraCentimos + extraManualCentimos;
+
+  return {
+    minutosExtra: totalMin,
+    horasExtraFormatadas: fmtMinutos(totalMin),
     valorHorasExtraCentimos,
     valorHorasExtra: centimosPaEuros(valorHorasExtraCentimos),
     extraManualCentimos,

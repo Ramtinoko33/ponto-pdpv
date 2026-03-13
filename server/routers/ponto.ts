@@ -31,7 +31,8 @@ import { getDb } from "../db";
 import { registosDiarios } from "../../drizzle/schema";
 import { eq, and } from "drizzle-orm";
 import { calcularSaldo } from "../pontoEngine";
-import { calcularResumoMonetario, eurosPaCentimos } from "../monetario";
+import { calcularResumoMonetario, calcularResumoMonetarioRegraEspecial, eurosPaCentimos } from "../monetario";
+import { meses as mesasTable } from "../../drizzle/schema";
 
 const MESES_PT = [
   '', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -83,6 +84,13 @@ export const pontoRouter = router({
     .query(async ({ input }) => {
       const registos = await getRegistosPorMes(input.mesId);
       const mapaExtra = await getMapaExtraManual(input.mesId);
+      // Verificar se a regra especial está ativa para este mês
+      const db = await getDb();
+      let regraEspecialAtiva = false;
+      if (db) {
+        const mesList = await db.select().from(mesasTable).where(eq(mesasTable.id, input.mesId)).limit(1);
+        regraEspecialAtiva = (mesList[0]?.regraEspecialAtiva ?? 0) === 1;
+      }
       // Agrupar por colaborador
       const map = new Map<string, {
         numero: string; nome: string; diasTrab: number; diasJust: number;
@@ -113,9 +121,26 @@ export const pontoRouter = router({
         .sort((a, b) => parseInt(a.numero) - parseInt(b.numero))
         .map(res => {
           const extraManualCentimos = mapaExtra[res.numero] ?? 0;
-          const monetario = calcularResumoMonetario(res.extra10Min, res.extra15Min, extraManualCentimos);
-          return { ...res, ...monetario };
+          const monetario = regraEspecialAtiva
+            ? calcularResumoMonetarioRegraEspecial(res.excessoAlm, res.extraSa, extraManualCentimos)
+            : calcularResumoMonetario(res.extra10Min, res.extra15Min, extraManualCentimos);
+          return { ...res, ...monetario, regraEspecialAtiva };
         });
+    }),
+
+  // Ativar/desativar regra especial de cálculo para um mês
+  toggleRegraEspecial: publicProcedure
+    .input(z.object({
+      mesId: z.number().int(),
+      ativa: z.boolean(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error('Sem ligação à base de dados');
+      await db.update(mesasTable)
+        .set({ regraEspecialAtiva: input.ativa ? 1 : 0 })
+        .where(eq(mesasTable.id, input.mesId));
+      return { success: true, ativa: input.ativa };
     }),
 
   // Resumo acumulado (todos os meses)

@@ -3,7 +3,7 @@ import { Link } from 'wouter';
 import { trpc } from '@/lib/trpc';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Clock, TrendingUp, TrendingDown, ChevronDown, ChevronUp, ExternalLink, Download } from 'lucide-react';
+import { Users, Clock, TrendingUp, TrendingDown, ChevronDown, ChevronUp, ExternalLink, Download, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Mes { id: number; label: string; saldoGeral: number; totalColaboradores: number; totalRegistos: number; }
@@ -41,6 +41,19 @@ export default function VistaMensal({ mesId, meses, onSelectMes }: { mesId: numb
     { numero: expandedColab ?? '', mesId },
     { enabled: !!expandedColab }
   );
+
+  // Regra especial: o estado vem do servidor (campo regraEspecialAtiva no primeiro item do resumo)
+  const regraEspecialAtiva = (resumo[0] as any)?.regraEspecialAtiva ?? false;
+
+  const toggleRegraEspecialMutation = trpc.ponto.toggleRegraEspecial.useMutation({
+    onSuccess: (data) => {
+      utils.ponto.getResumoMes.invalidate({ mesId });
+      toast.success(data.ativa ? 'Regra Especial ATIVADA — cálculo combinado almoço+tarde' : 'Regra Especial DESATIVADA — cálculo normal');
+    },
+    onError: (err) => {
+      toast.error(`Erro ao alterar regra: ${err.message}`);
+    },
+  });
 
   const setExtraManualMutation = trpc.ponto.setExtraManual.useMutation({
     onSuccess: () => {
@@ -153,6 +166,22 @@ export default function VistaMensal({ mesId, meses, onSelectMes }: { mesId: numb
           <Download className="w-3.5 h-3.5" />
           Download Excel
         </Button>
+        {/* Botão Regra Especial */}
+        <button
+          onClick={() => toggleRegraEspecialMutation.mutate({ mesId, ativa: !regraEspecialAtiva })}
+          disabled={toggleRegraEspecialMutation.isPending}
+          title={regraEspecialAtiva
+            ? 'Regra Especial ATIVA: soma almoço+tarde; ≤30min @10€/h, ≥31min @15€/h (tudo). Clique para desativar.'
+            : 'Regra Especial INATIVA: cálculo normal (almoço @10€/h + saída @10€/h ou @15€/h separados). Clique para ativar.'}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold border transition-all ${
+            regraEspecialAtiva
+              ? 'bg-amber-500/20 border-amber-400 text-amber-300 hover:bg-amber-500/30'
+              : 'bg-card border-border text-muted-foreground hover:border-amber-400/50 hover:text-amber-400'
+          }`}
+        >
+          <Zap className={`w-3.5 h-3.5 ${regraEspecialAtiva ? 'fill-amber-400 text-amber-400' : ''}`} />
+          {regraEspecialAtiva ? 'Regra Especial ATIVA' : 'Regra Especial'}
+        </button>
       </div>
 
       {/* Cards de resumo */}

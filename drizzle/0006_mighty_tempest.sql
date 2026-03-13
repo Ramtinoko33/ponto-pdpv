@@ -1,0 +1,1 @@
+ALTER TABLE `meses` ADD `regraEspecialAtiva` int DEFAULT 0 NOT NULL;
