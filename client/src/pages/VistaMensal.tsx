@@ -37,10 +37,11 @@ export default function VistaMensal({ mesId, meses, onSelectMes }: { mesId: numb
   const utils = trpc.useUtils();
   const { data: resumo = [], isLoading: loadingResumo } = trpc.ponto.getResumoMes.useQuery({ mesId });
   const { data: registos = [], isLoading: loadingRegistos } = trpc.ponto.getRegistosMes.useQuery({ mesId });
-  const { data: detalheColab = [] } = trpc.ponto.getDetalheColaborador.useQuery(
+  const { data: detalheColabData } = trpc.ponto.getDetalheColaborador.useQuery(
     { numero: expandedColab ?? '', mesId },
     { enabled: !!expandedColab }
   );
+  const detalheColab = detalheColabData?.registos ?? [];
 
   // Regra especial: o estado vem do servidor (campo regraEspecialAtiva no primeiro item do resumo)
   const regraEspecialAtiva = (resumo[0] as any)?.regraEspecialAtiva ?? false;

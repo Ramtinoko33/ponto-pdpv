@@ -148,11 +148,19 @@ export const pontoRouter = router({
     return getResumoAcumulado();
   }),
 
-  // Detalhe de um colaborador num mês
+  // Detalhe de um colaborador num mês (inclui regraEspecialAtiva para cálculo correto no frontend)
   getDetalheColaborador: publicProcedure
     .input(z.object({ numero: z.string(), mesId: z.number().int() }))
     .query(async ({ input }) => {
-      return getRegistosPorColaborador(input.numero, input.mesId);
+      const registos = await getRegistosPorColaborador(input.numero, input.mesId);
+      // Verificar se a regra especial está ativa para este mês
+      const db = await getDb();
+      let regraEspecialAtiva = false;
+      if (db) {
+        const mesList = await db.select().from(mesasTable).where(eq(mesasTable.id, input.mesId)).limit(1);
+        regraEspecialAtiva = (mesList[0]?.regraEspecialAtiva ?? 0) === 1;
+      }
+      return { registos, regraEspecialAtiva };
     }),
 
   // Apagar um mês

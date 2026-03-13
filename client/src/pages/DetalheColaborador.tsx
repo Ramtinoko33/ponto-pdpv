@@ -325,10 +325,12 @@ export default function DetalheColaborador() {
   // Dados do mês e do colaborador
   const { data: meses = [] } = trpc.ponto.listarMeses.useQuery();
   const { data: colaboradores = [] } = trpc.ponto.listarColaboradores.useQuery();
-  const { data: registos = [], isLoading, refetch } = trpc.ponto.getDetalheColaborador.useQuery(
+  const { data: detalheData, isLoading, refetch } = trpc.ponto.getDetalheColaborador.useQuery(
     { numero, mesId },
     { enabled: !!numero && !!mesId }
   );
+  const registos = detalheData?.registos ?? [];
+  const regraEspecialAtiva = detalheData?.regraEspecialAtiva ?? false;
 
   const mesSel = meses.find(m => m.id === mesId);
   const nomeColab = registos[0]?.nome ?? numero;
@@ -348,7 +350,14 @@ export default function DetalheColaborador() {
   const totExtra = registosValidos.reduce((a, r) => a + r.extraSa, 0);
   const tot10Min = registosValidos.reduce((a, r) => a + (r.extra10Min ?? 0), 0);
   const tot15Min = registosValidos.reduce((a, r) => a + (r.extra15Min ?? 0), 0);
-  const totExtraEuros = Math.round(((tot10Min / 60) * 10 + (tot15Min / 60) * 15) * 100) / 100;
+  // Cálculo monetário: usa Regra Especial se ativa (soma almoço+tarde; ≤30min @10€/h, ≥31min @15€/h tudo)
+  const totAlmCurto = registosValidos.reduce((a, r) => a + (r.excessoAlm < 0 ? -r.excessoAlm : 0), 0); // almoço curto (positivo)
+  const totExtraEuros = regraEspecialAtiva
+    ? (() => {
+        const totalMin = Math.max(0, totAlmCurto + totExtra);
+        return Math.round((totalMin <= 30 ? (totalMin / 60) * 10 : (totalMin / 60) * 15) * 100) / 100;
+      })()
+    : Math.round(((tot10Min / 60) * 10 + (tot15Min / 60) * 15) * 100) / 100;
   const celulasAuto = registosValidos.reduce((a, r) =>
     a + (r.en1Auto ? 1 : 0) + (r.sa1Auto ? 1 : 0) + (r.en2Auto ? 1 : 0) + (r.sa2Auto ? 1 : 0), 0);
   const diasJust = registos.filter(r => !!r.justificacao).length;
