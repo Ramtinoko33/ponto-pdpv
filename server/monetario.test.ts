@@ -173,75 +173,65 @@ describe('calcularResumoMonetario', () => {
 });
 
 describe('calcularResumoMonetarioRegraEspecial', () => {
-  // Exemplos exatos do enunciado
-  it('Exemplo 1: almoço 5min + tarde 10min = 15min ≤ 30 → 15/60*10 = 2.50€', () => {
-    const r = calcularResumoMonetarioRegraEspecial(5, 10, 0);
+  // Regra: usa o SALDO diretamente
+  // saldo ≤ 30min → @10€/h; saldo ≥ 31min → @15€/h (todos os minutos)
+
+  it('Saldo 15min ≤ 30 → 15/60*10 = 2.50€', () => {
+    const r = calcularResumoMonetarioRegraEspecial(15, 0);
     expect(r.minutosExtra).toBe(15);
     expect(r.valorHorasExtra).toBe(2.50);
     expect(r.totalDinheiroPagar).toBe(2.50);
   });
 
-  it('Exemplo 2: almoço 10min + tarde 20min = 30min ≤ 30 → 30/60*10 = 5.00€', () => {
-    const r = calcularResumoMonetarioRegraEspecial(10, 20, 0);
+  it('Saldo 22min ≤ 30 → 22/60*10 = 3.67€', () => {
+    const r = calcularResumoMonetarioRegraEspecial(22, 0);
+    expect(r.minutosExtra).toBe(22);
+    // 22 * 1000 / 60 = round(366.67) = 367 cêntimos = 3.67€
+    expect(r.valorHorasExtra).toBe(3.67);
+    expect(r.totalDinheiroPagar).toBe(3.67);
+  });
+
+  it('Saldo 30min ≤ 30 → 30/60*10 = 5.00€ (limiar inferior)', () => {
+    const r = calcularResumoMonetarioRegraEspecial(30, 0);
     expect(r.minutosExtra).toBe(30);
     expect(r.valorHorasExtra).toBe(5.00);
     expect(r.totalDinheiroPagar).toBe(5.00);
   });
 
-  it('Exemplo 3: almoço 12min + tarde 19min = 31min ≥ 31 → 31/60*15 = 7.75€', () => {
-    const r = calcularResumoMonetarioRegraEspecial(12, 19, 0);
+  it('Saldo 31min ≥ 31 → 31/60*15 = 7.75€ (limiar superior)', () => {
+    const r = calcularResumoMonetarioRegraEspecial(31, 0);
     expect(r.minutosExtra).toBe(31);
     // 31 * 1500 / 60 = 775 cêntimos = 7.75€
     expect(r.valorHorasExtra).toBe(7.75);
     expect(r.totalDinheiroPagar).toBe(7.75);
   });
 
-  it('Exemplo 4: almoço 15min + tarde 30min = 45min ≥ 31 → 45/60*15 = 11.25€', () => {
-    const r = calcularResumoMonetarioRegraEspecial(15, 30, 0);
+  it('Saldo 45min ≥ 31 → 45/60*15 = 11.25€', () => {
+    const r = calcularResumoMonetarioRegraEspecial(45, 0);
     expect(r.minutosExtra).toBe(45);
     // 45 * 1500 / 60 = 1125 cêntimos = 11.25€
     expect(r.valorHorasExtra).toBe(11.25);
     expect(r.totalDinheiroPagar).toBe(11.25);
   });
 
-  it('Exemplo 5: almoço -15min + tarde 30min = 15min ≤ 30 → 15/60*10 = 2.50€', () => {
-    // almoço negativo = almoço longo (demorou mais do que o esperado)
-    const r = calcularResumoMonetarioRegraEspecial(-15, 30, 0);
-    expect(r.minutosExtra).toBe(15);
-    expect(r.valorHorasExtra).toBe(2.50);
-    expect(r.totalDinheiroPagar).toBe(2.50);
-  });
-
   // Edge cases
-  it('total negativo (almoço longo sem saída tarde) → 0 minutos, 0€', () => {
-    const r = calcularResumoMonetarioRegraEspecial(-30, 0, 0);
+  it('saldo negativo → 0 minutos, 0€', () => {
+    const r = calcularResumoMonetarioRegraEspecial(-5, 0);
     expect(r.minutosExtra).toBe(0);
     expect(r.valorHorasExtra).toBe(0);
   });
 
-  it('exatamente 30min → @10€/h (limiar inferior)', () => {
-    const r = calcularResumoMonetarioRegraEspecial(0, 30, 0);
-    expect(r.minutosExtra).toBe(30);
-    expect(r.valorHorasExtra).toBe(5.00); // 30/60*10 = 5€
-  });
-
-  it('exatamente 31min → @15€/h (limiar superior)', () => {
-    const r = calcularResumoMonetarioRegraEspecial(0, 31, 0);
-    expect(r.minutosExtra).toBe(31);
-    expect(r.valorHorasExtra).toBe(7.75); // 31/60*15 = 7.75€
-  });
-
-  it('inclui extra manual no total a pagar', () => {
-    const r = calcularResumoMonetarioRegraEspecial(10, 20, 1000); // 5€ horas + 10€ manual = 15€
-    expect(r.valorHorasExtra).toBe(5.00);
-    expect(r.extraManualEuros).toBe(10.00);
-    expect(r.totalDinheiroPagar).toBe(15.00);
-  });
-
-  it('retorna zeros para inputs zero', () => {
-    const r = calcularResumoMonetarioRegraEspecial(0, 0, 0);
+  it('saldo zero → 0€', () => {
+    const r = calcularResumoMonetarioRegraEspecial(0, 0);
     expect(r.minutosExtra).toBe(0);
     expect(r.valorHorasExtra).toBe(0);
     expect(r.totalDinheiroPagar).toBe(0);
+  });
+
+  it('inclui extra manual no total a pagar', () => {
+    const r = calcularResumoMonetarioRegraEspecial(30, 1000); // 5€ horas + 10€ manual = 15€
+    expect(r.valorHorasExtra).toBe(5.00);
+    expect(r.extraManualEuros).toBe(10.00);
+    expect(r.totalDinheiroPagar).toBe(15.00);
   });
 });

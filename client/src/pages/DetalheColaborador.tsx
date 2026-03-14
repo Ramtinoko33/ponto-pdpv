@@ -227,15 +227,10 @@ function LinhaRegistoEditavel({ registo: r, onSaved, regraEspecialAtiva = false 
         )}
       </td>
 
-       {/* Extra @10€ — quando RE ativa, mostra almoço curto */}
+      {/* Extra @10€ — quando RE ativa, não se usa (saldo é a base) */}
       <td className="px-2 py-1.5 text-center">
         {regraEspecialAtiva ? (
-          // RE: mostrar almoço curto (excessoAlm negativo = almoço mais curto)
-          !isJust && r.excessoAlm < 0 ? (
-            <span className="font-mono text-xs text-amber-400" title="Almoço curto (RE)">{-r.excessoAlm}min ☀️</span>
-          ) : (
-            <span className="text-muted-foreground/30 text-xs">—</span>
-          )
+          <span className="text-muted-foreground/20 text-xs">—</span>
         ) : (
           !isJust && (r.extra10Min ?? 0) > 0 ? (
             <span className="font-mono text-xs text-emerald-500">{r.extra10Min}min</span>
@@ -244,14 +239,10 @@ function LinhaRegistoEditavel({ registo: r, onSaved, regraEspecialAtiva = false 
           )
         )}
       </td>
-      {/* Extra @15€ — quando RE ativa, mostra saída tarde */}
+      {/* Extra @15€ — quando RE ativa, não se usa (saldo é a base) */}
       <td className="px-2 py-1.5 text-center">
         {regraEspecialAtiva ? (
-          !isJust && r.extraSa > 0 ? (
-            <span className="font-mono text-xs text-emerald-400" title="Saída tarde (RE)">{r.extraSa}min</span>
-          ) : (
-            <span className="text-muted-foreground/30 text-xs">—</span>
-          )
+          <span className="text-muted-foreground/20 text-xs">—</span>
         ) : (
           !isJust && (r.extra15Min ?? 0) > 0 ? (
             <span className="font-mono text-xs text-emerald-400">{r.extra15Min}min</span>
@@ -264,13 +255,13 @@ function LinhaRegistoEditavel({ registo: r, onSaved, regraEspecialAtiva = false 
       <td className="px-2 py-1.5 text-center">
         {regraEspecialAtiva ? (() => {
           if (isJust) return <span className="text-muted-foreground/30 text-xs">—</span>;
-          const almCurto = r.excessoAlm < 0 ? -r.excessoAlm : 0;
-          const totalMin = Math.max(0, almCurto + (r.extraSa ?? 0));
+          const saldo = r.saldo ?? 0;
+          const totalMin = Math.max(0, saldo);
           if (totalMin === 0) return <span className="text-muted-foreground/30 text-xs">—</span>;
           const tarifa = totalMin <= 30 ? 10 : 15;
           const valor = (totalMin / 60) * tarifa;
           return (
-            <span className="font-mono text-xs font-semibold text-emerald-400" title={`${totalMin}min × ${tarifa}€/h = ${valor.toFixed(2)}€`}>
+            <span className="font-mono text-xs font-semibold text-emerald-400" title={`Saldo ${totalMin}min × ${tarifa}€/h = ${valor.toFixed(2)}€`}>
               <span className="text-[9px] text-amber-400 mr-0.5">⚡{totalMin}min@{tarifa}€</span>
               {valor.toFixed(2)}€
             </span>

@@ -122,7 +122,7 @@ export const pontoRouter = router({
         .map(res => {
           const extraManualCentimos = mapaExtra[res.numero] ?? 0;
           const monetario = regraEspecialAtiva
-            ? calcularResumoMonetarioRegraEspecial(res.excessoAlm, res.extraSa, extraManualCentimos)
+            ? calcularResumoMonetarioRegraEspecial(res.saldoTotal, extraManualCentimos)
             : calcularResumoMonetario(res.extra10Min, res.extra15Min, extraManualCentimos);
           return { ...res, ...monetario, regraEspecialAtiva };
         });

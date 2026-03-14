@@ -127,32 +127,26 @@ export function calcularResumoMonetario(
 /**
  * REGRA ESPECIAL de cálculo de horas extra.
  *
- * Soma almoço curto (extra10Min) + saída tarde (extra10Min da tarde + extra15Min):
- * - Se total ≤ 30 min → paga TUDO a 10€/h
- * - Se total ≥ 31 min → paga TUDO a 15€/h
- *
- * Nota: almoço curto pode ser negativo (ex: almoço longo = -15min);
- * nesse caso contribui negativamente para a soma, podendo reduzir o total.
- * O total é sempre tratado como máximo de 0 (nunca negativo).
+ * Usa o SALDO diário/mensal diretamente:
+ * - Se saldo ≤ 30 min → paga TUDO a 10€/h
+ * - Se saldo ≥ 31 min → paga TUDO a 15€/h
  *
  * Exemplos:
- *   Almoço 5min + Tarde 10min = 15min ≤ 30 → 15/60*10 = 2.50€
- *   Almoço 10min + Tarde 20min = 30min ≤ 30 → 30/60*10 = 5.00€
- *   Almoço 12min + Tarde 19min = 31min ≥ 31 → 31/60*15 = 7.75€
- *   Almoço 15min + Tarde 30min = 45min ≥ 31 → 45/60*15 = 11.25€
- *   Almoço -15min + Tarde 30min = 15min ≤ 30 → 15/60*10 = 2.50€
+ *   Saldo 22min ≤ 30 → 22/60*10 = 3.67€
+ *   Saldo 30min ≤ 30 → 30/60*10 = 5.00€
+ *   Saldo 31min ≥ 31 → 31/60*15 = 7.75€
+ *   Saldo 45min ≥ 31 → 45/60*15 = 11.25€
+ *   Saldo negativo → 0€
  *
- * @param excessoAlmMin - minutos de almoço curto (positivo = poupou, negativo = demorou mais)
- * @param extraSaMin - minutos de saída após hora esperada (sempre positivo)
+ * @param saldoMin - saldo em minutos (diário ou acumulado mensal)
  * @param extraManualCentimos - extra manual em cêntimos
  */
 export function calcularResumoMonetarioRegraEspecial(
-  excessoAlmMin: number,
-  extraSaMin: number,
+  saldoMin: number,
   extraManualCentimos: number
 ): ResumoMonetario {
-  // Soma almoço curto + saída tarde; nunca negativo
-  const totalMin = Math.max(0, excessoAlmMin + extraSaMin);
+  // Usa o saldo; nunca negativo
+  const totalMin = Math.max(0, saldoMin);
 
   // Aplica tarifa: ≤ 30min → @10€/h; ≥ 31min → @15€/h (TUDO)
   const tarifa = totalMin <= 30 ? TARIFA_10_CENTIMOS : TARIFA_15_CENTIMOS;
