@@ -392,4 +392,40 @@ export const pontoRouter = router({
       }
       return resultado;
     }),
+
+  // Recalcular todos os saldos dos registos de um mês (aplica a lógica atual de cálculo)
+  recalcularMes: publicProcedure
+    .input(z.object({ mesId: z.number().int() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error('Sem ligação à base de dados');
+
+      // Carregar todos os registos do mês (não ignorados)
+      const todosRegistos = await db.select().from(registosDiarios)
+        .where(and(eq(registosDiarios.mesId, input.mesId), eq(registosDiarios.ignorada, 0)));
+
+      // Carregar mapa de horários personalizados
+      const mapa = await getMapaHorariosCustom();
+
+      let recalculados = 0;
+      for (const r of todosRegistos) {
+        const isSabado = r.diaSemana === 'SÁB' || r.diaSemana === 'SAB';
+        const calc = calcularSaldo(r.en1, r.sa1, r.en2, r.sa2, isSabado, r.numero, mapa);
+        await db.update(registosDiarios)
+          .set({
+            saldo: calc.saldo,
+            atrasoEn: calc.atrasoEn,
+            excessoAlm: calc.excessoAlm,
+            saidaCedo: calc.saidaCedo,
+            extraSa: calc.extraSa,
+            extra10Min: calc.extra10Min,
+            extra15Min: calc.extra15Min,
+            detalhe: calc.detalhe,
+          })
+          .where(eq(registosDiarios.id, r.id));
+        recalculados++;
+      }
+
+      return { success: true, recalculados };
+    }),
 });

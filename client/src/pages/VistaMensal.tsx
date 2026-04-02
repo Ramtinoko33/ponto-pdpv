@@ -57,6 +57,17 @@ export default function VistaMensal({ mesId, meses, onSelectMes }: { mesId: numb
     },
   });
 
+  const recalcularMesMutation = trpc.ponto.recalcularMes.useMutation({
+    onSuccess: (data) => {
+      utils.ponto.getResumoMes.invalidate({ mesId });
+      utils.ponto.getRegistosMes.invalidate({ mesId });
+      toast.success(`Recalculado: ${data.recalculados} registos atualizados com a lógica atual`);
+    },
+    onError: (err) => {
+      toast.error(`Erro ao recalcular: ${err.message}`);
+    },
+  });
+
   const setExtraManualMutation = trpc.ponto.setExtraManual.useMutation({
     onSuccess: () => {
       utils.ponto.getResumoMes.invalidate({ mesId });
@@ -100,27 +111,36 @@ export default function VistaMensal({ mesId, meses, onSelectMes }: { mesId: numb
     }
     const label = mesSel?.label ?? 'mes';
     const linhas: string[] = [];
+    const modoRE = (resumo[0] as any)?.regraEspecialAtiva ?? false;
     // Cabeçalho
     linhas.push([
       'Nº', 'Nome', 'Dias Trab.', 'Dias Just.', 'Cél. Auto',
       'Atrasos (min)', 'Exc. Almoço (min)', 'Saída Cedo (min)', 'Horas Extra (min)',
-      'Extra @10€/h (min)', 'Extra @15€/h (min)',
-      'Valor Horas Extra (€)', 'Extra Manual (€)', 'TOTAL A PAGAR (€)',
+      modoRE ? 'Extra RE (min)' : 'Extra @10€/h (min)',
+      modoRE ? 'Tarifa RE' : 'Extra @15€/h (min)',
+      'Valor Bruto Horas Extra (€)', 'Desconto Negativos (€)', 'Líquido Horas Extra (€)',
+      'Extra Manual (€)', 'TOTAL A PAGAR (€)',
       'Saldo Total (min)',
     ].join(';'));
     // Dados
     for (const r of resumo) {
       const em = (r as any).extraManualEuros ?? 0;
-      const vh = (r as any).valorHorasExtra ?? 0;
+      const vh = (r as any).valorHorasExtra ?? 0; // já é o líquido (positivos - negativos)
       const tp = (r as any).totalDinheiroPagar ?? 0;
+      const desconto = (r as any).descontoNegativoEuros ?? 0;
+      const vhBruto = vh + desconto; // valor bruto = líquido + desconto
       linhas.push([
         r.numero, r.nome, r.diasTrab, r.diasJust, r.celulasAuto,
         r.atrasoEn, r.excessoAlm, r.saidaCedo, r.extraSa,
-        r.extra10Min ?? 0, r.extra15Min ?? 0,
-        vh.toFixed(2), em.toFixed(2), tp.toFixed(2),
+        modoRE ? (r.saldoTotal > 0 ? r.saldoTotal : 0) : (r.extra10Min ?? 0),
+        modoRE ? (r.saldoTotal > 0 ? (r.saldoTotal <= 30 ? '10€/h' : '15€/h') : '—') : (r.extra15Min ?? 0),
+        vhBruto.toFixed(2), desconto > 0 ? `-${desconto.toFixed(2)}` : '0.00', vh.toFixed(2),
+        em.toFixed(2), tp.toFixed(2),
         r.saldoTotal,
       ].join(';'));
     }
+    const totDesconto = resumo.reduce((a, r) => a + ((r as any).descontoNegativoEuros ?? 0), 0);
+    const totVhBruto = totValorHorasExtra + totDesconto;
     // Linha de totais
     linhas.push([
       '', 'TOTAL',
@@ -128,13 +148,16 @@ export default function VistaMensal({ mesId, meses, onSelectMes }: { mesId: numb
       resumo.reduce((a, r) => a + r.diasJust, 0),
       resumo.reduce((a, r) => a + r.celulasAuto, 0),
       totAtraso, totAlm, totCedo, totExtra,
-      resumo.reduce((a, r) => a + (r.extra10Min ?? 0), 0),
-      resumo.reduce((a, r) => a + (r.extra15Min ?? 0), 0),
+      '', '',
+      totVhBruto.toFixed(2),
+      totDesconto > 0 ? `-${totDesconto.toFixed(2)}` : '0.00',
       totValorHorasExtra.toFixed(2),
       totExtraManual.toFixed(2),
       totTotalPagar.toFixed(2),
       totSaldo,
     ].join(';'));
+    // Nota de rodapé
+    if (modoRE) linhas.push(';Cálculo: Regra Especial ativa (saldo ≤30min @10€/h; ≥31min @15€/h; negativos descontados @10€/h)');
 
     const csv = '\uFEFF' + linhas.join('\n'); // BOM para Excel PT
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -184,6 +207,26 @@ export default function VistaMensal({ mesId, meses, onSelectMes }: { mesId: numb
           <Zap className={`w-3.5 h-3.5 ${regraEspecialAtiva ? 'fill-amber-400 text-amber-400' : ''}`} />
           {regraEspecialAtiva ? 'Regra Especial ATIVA' : 'Regra Especial'}
         </button>
+        {/* Botão Recalcular Mês */}
+        <button
+          onClick={() => {
+            if (confirm(`Recalcular todos os registos de ${mesSel?.label ?? 'este mês'} com a lógica atual?\n\nIsto atualiza saldos, horas extra e tarifas de todos os dias do mês.`)) {
+              recalcularMesMutation.mutate({ mesId });
+            }
+          }}
+          disabled={recalcularMesMutation.isPending || resumo.length === 0}
+          title="Recalcular todos os saldos e horas extra deste mês com a lógica atual (aplica correções em meses já carregados)"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold border transition-all bg-card border-border text-muted-foreground hover:border-cyan-400/50 hover:text-cyan-400 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {recalcularMesMutation.isPending ? (
+            <span className="w-3.5 h-3.5 border border-current border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          )}
+          Recalcular Mês
+        </button>
       </div>
 
       {/* Cards de resumo */}
@@ -195,7 +238,7 @@ export default function VistaMensal({ mesId, meses, onSelectMes }: { mesId: numb
           { label: 'Saída Antecipada', value: fmtMin(-totCedo, false), color: 'text-red-400', icon: <TrendingDown className="w-4 h-4" /> },
           { label: 'Horas Extra', value: fmtMin(totExtra, false), color: 'text-emerald-400', icon: <TrendingUp className="w-4 h-4" /> },
           { label: 'Valor Horas Extra', value: fmtEuros(totValorHorasExtra), color: 'text-emerald-300', icon: <span className="font-bold text-xs">€</span> },
-          { label: 'Total a Pagar', value: fmtEuros(totTotalPagar), color: 'text-yellow-300', icon: <span className="font-bold text-xs">€</span> },
+          { label: 'Total a Pagar', value: fmtEuros(totTotalPagar), color: totTotalPagar < 0 ? 'text-red-400' : totTotalPagar > 0 ? 'text-yellow-300' : 'text-muted-foreground', icon: <span className="font-bold text-xs">€</span> },
         ].map((c, i) => (
           <Card key={i}>
             <CardContent className="p-4">
