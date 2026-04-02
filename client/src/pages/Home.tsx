@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
 import {
@@ -23,8 +23,20 @@ function fmtSaldo(min: number) {
 }
 
 export default function Home() {
-  const [tab, setTab] = useState<Tab>('upload');
-  const [selectedMesId, setSelectedMesId] = useState<number | null>(null);
+  const [tab, setTab] = useState<Tab>(() => {
+    const saved = localStorage.getItem('ponto_tab');
+    return (saved as Tab) || 'upload';
+  });
+  const [selectedMesId, setSelectedMesId] = useState<number | null>(() => {
+    const saved = localStorage.getItem('ponto_mesId');
+    return saved ? parseInt(saved) : null;
+  });
+
+  // Persistir tab e mês no localStorage sempre que mudam
+  useEffect(() => { localStorage.setItem('ponto_tab', tab); }, [tab]);
+  useEffect(() => {
+    if (selectedMesId !== null) localStorage.setItem('ponto_mesId', String(selectedMesId));
+  }, [selectedMesId]);
   const [uploading, setUploading] = useState(false);
   const [ano, setAno] = useState(new Date().getFullYear());
   const [mes, setMes] = useState(new Date().getMonth() + 1);
