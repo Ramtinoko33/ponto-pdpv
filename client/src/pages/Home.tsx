@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import {
   Clock, Upload, Trash2, ChevronRight, BarChart3, Users,
   TrendingUp, Calendar, AlertCircle, CheckCircle2, FileSpreadsheet, Settings,
+  AlertTriangle, Search, X,
 } from 'lucide-react';
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
@@ -38,6 +39,7 @@ export default function Home() {
     if (selectedMesId !== null) localStorage.setItem('ponto_mesId', String(selectedMesId));
   }, [selectedMesId]);
   const [uploading, setUploading] = useState(false);
+  const [filtroColab, setFiltroColab] = useState('');
   const [ano, setAno] = useState(new Date().getFullYear());
   const [mes, setMes] = useState(new Date().getMonth() + 1);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -68,6 +70,15 @@ export default function Home() {
 
   const MESES_PT = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
+  // Filtro de meses por colaborador — filtra os meses que contêm o texto pesquisado no label
+  // (o label inclui o nome do mês e ano; o filtro é aplicado sobre os colaboradores carregados)
+  // Como a sidebar lista meses (não colaboradores), o filtro aqui é sobre o label do mês.
+  // Para filtrar por colaborador dentro de um mês precisaria de dados adicionais.
+  // Por isso filtramos o label do mês (ex: "Janeiro 2025") pelo texto introduzido.
+  const mesesFiltrados = filtroColab.trim()
+    ? meses.filter(m => m.label.toLowerCase().includes(filtroColab.trim().toLowerCase()))
+    : meses;
 
   const navItems = [
     { id: 'upload' as Tab, icon: <Upload className="w-4 h-4" />, label: 'Carregar Mês' },
@@ -112,36 +123,72 @@ export default function Home() {
         </nav>
 
         {/* Meses carregados */}
-        <div className="p-3 border-t border-sidebar-border">
-          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest px-3 mb-2">Meses Carregados</p>
+        <div className="p-3 border-t border-sidebar-border flex-1 flex flex-col min-h-0">
+          <div className="flex items-center justify-between px-1 mb-2">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Meses Carregados</p>
+            {meses.some(m => m.saldoGeral < 0) && (
+              <span title="Existem meses com saldo negativo" className="flex items-center gap-1 text-[10px] text-red-400">
+                <AlertTriangle className="w-3 h-3" />
+              </span>
+            )}
+          </div>
           {loadingMeses ? (
             <div className="px-3 py-2 text-xs text-muted-foreground">A carregar...</div>
           ) : meses.length === 0 ? (
             <div className="px-3 py-2 text-xs text-muted-foreground italic">Nenhum mês ainda</div>
           ) : (
-            <div className="space-y-0.5 max-h-48 overflow-y-auto">
-              {meses.map(m => (
-                <div
-                  key={m.id}
-                  className={`flex items-center justify-between px-3 py-1.5 rounded-md cursor-pointer group transition-colors ${
-                    selectedMesId === m.id ? 'bg-sidebar-accent' : 'hover:bg-sidebar-accent/50'
-                  }`}
-                  onClick={() => { setSelectedMesId(m.id); setTab('mensal'); }}
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-sidebar-foreground truncate">{m.label}</p>
-                    <p className={`text-[10px] mono ${m.saldoGeral >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {fmtSaldo(m.saldoGeral)}
-                    </p>
-                  </div>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); apagarMut.mutate({ mesId: m.id }); }}
-                    className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-all"
-                  >
-                    <Trash2 className="w-3 h-3" />
+            <div className="flex flex-col gap-1 min-h-0">
+              {/* Filtro por colaborador */}
+              <div className="relative mb-1">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Filtrar por mês..."
+                  value={filtroColab}
+                  onChange={e => setFiltroColab(e.target.value)}
+                  className="w-full h-7 pl-7 pr-6 text-[11px] rounded-md border border-sidebar-border bg-sidebar-accent/30 text-sidebar-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+                {filtroColab && (
+                  <button onClick={() => setFiltroColab('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                    <X className="w-3 h-3" />
                   </button>
-                </div>
-              ))}
+                )}
+              </div>
+              <div className="space-y-0.5 overflow-y-auto" style={{ maxHeight: '14rem' }}>
+                {mesesFiltrados.length === 0 ? (
+                  <p className="px-3 py-2 text-[11px] text-muted-foreground italic">Sem resultados</p>
+                ) : mesesFiltrados.map(m => (
+                  <div
+                    key={m.id}
+                    className={`flex items-center justify-between px-3 py-1.5 rounded-md cursor-pointer group transition-colors ${
+                      selectedMesId === m.id
+                        ? 'bg-sidebar-accent'
+                        : m.saldoGeral < 0
+                          ? 'hover:bg-red-500/10 border border-red-500/20'
+                          : 'hover:bg-sidebar-accent/50'
+                    }`}
+                    onClick={() => { setSelectedMesId(m.id); setTab('mensal'); }}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1">
+                        {m.saldoGeral < 0 && <AlertTriangle className="w-2.5 h-2.5 text-red-400 flex-shrink-0" />}
+                        <p className={`text-xs font-medium truncate ${
+                          m.saldoGeral < 0 ? 'text-red-300' : 'text-sidebar-foreground'
+                        }`}>{m.label}</p>
+                      </div>
+                      <p className={`text-[10px] mono ${m.saldoGeral >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {fmtSaldo(m.saldoGeral)}
+                      </p>
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); apagarMut.mutate({ mesId: m.id }); }}
+                      className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-all"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
