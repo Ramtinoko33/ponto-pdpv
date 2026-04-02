@@ -302,6 +302,7 @@ export default function VistaMensal({ mesId, meses, onSelectMes }: { mesId: numb
                       <th className="text-center px-2 py-2.5 font-semibold text-red-400">Saída Cedo</th>
                       <th className="text-center px-2 py-2.5 font-semibold text-emerald-400">Horas Extra</th>
                       <th className="text-center px-2 py-2.5 font-semibold text-emerald-300">Valor Extra €</th>
+                      <th className="text-center px-2 py-2.5 font-semibold text-red-400">Desconto €</th>
                       <th className="text-center px-2 py-2.5 font-semibold text-yellow-300">Extra Manual €</th>
                       <th className="text-center px-2 py-2.5 font-semibold text-yellow-400">Total a Pagar</th>
                       <th className="text-center px-2 py-2.5 font-semibold text-foreground">Saldo Total</th>
@@ -335,6 +336,13 @@ export default function VistaMensal({ mesId, meses, onSelectMes }: { mesId: numb
                             <td className={`px-2 py-2 text-center mono font-semibold ${valorHorasExtra < 0 ? 'text-red-400' : 'text-emerald-300'}`}>
                               {fmtEuros(valorHorasExtra)}
                             </td>
+                            {/* Coluna Desconto — minutos negativos descontados */}
+                            <td className="px-2 py-2 text-center mono text-red-400 font-semibold">
+                              {(() => {
+                                const desconto = (r as any).descontoNegativoEuros ?? 0;
+                                return desconto > 0 ? `-${desconto.toFixed(2)}€` : '—';
+                              })()}
+                            </td>
                             {/* Coluna Extra Manual — input editável */}
                             <td
                               className="px-2 py-2 text-center"
@@ -361,7 +369,7 @@ export default function VistaMensal({ mesId, meses, onSelectMes }: { mesId: numb
                                 className="w-20 h-7 px-2 text-center text-xs rounded border border-yellow-400/40 bg-yellow-400/10 text-yellow-300 font-semibold focus:outline-none focus:ring-1 focus:ring-yellow-400 mono"
                               />
                             </td>
-                            <td className="px-2 py-2 text-center mono text-yellow-400 font-bold">
+                            <td className={`px-2 py-2 text-center mono font-bold ${totalDinheiroPagar < 0 ? 'text-red-400' : 'text-yellow-400'}`}>
                               {fmtEuros(totalDinheiroPagar)}
                             </td>
                             <td className="px-2 py-2 text-center"><SaldoBadge min={r.saldoTotal} /></td>
@@ -381,7 +389,7 @@ export default function VistaMensal({ mesId, meses, onSelectMes }: { mesId: numb
                           </tr>
                           {expandedColab === r.numero && (
                             <tr className="bg-card/30">
-                              <td colSpan={13} className="px-4 py-3">
+                              <td colSpan={14} className="px-4 py-3">
                                 <div className="overflow-x-auto">
                                   <table className="w-full text-xs">
                                     <thead>
@@ -431,8 +439,14 @@ export default function VistaMensal({ mesId, meses, onSelectMes }: { mesId: numb
                       <td className="px-2 py-2.5 text-center mono text-red-400">{totCedo > 0 ? `-${fmtMin(totCedo, false)}` : '—'}</td>
                       <td className="px-2 py-2.5 text-center mono text-emerald-400">{totExtra > 0 ? `+${fmtMin(totExtra, false)}` : '—'}</td>
                       <td className="px-2 py-2.5 text-center mono text-emerald-300">{fmtEuros(totValorHorasExtra)}</td>
+                      <td className="px-2 py-2.5 text-center mono text-red-400 font-bold">
+                        {(() => {
+                          const totDesconto = resumo.reduce((a, r) => a + ((r as any).descontoNegativoEuros ?? 0), 0);
+                          return totDesconto > 0 ? `-${totDesconto.toFixed(2)}€` : '—';
+                        })()}
+                      </td>
                       <td className="px-2 py-2.5 text-center mono text-yellow-300">{fmtEuros(totExtraManual)}</td>
-                      <td className="px-2 py-2.5 text-center mono text-yellow-400">{fmtEuros(totTotalPagar)}</td>
+                      <td className={`px-2 py-2.5 text-center mono ${totTotalPagar < 0 ? 'text-red-400' : 'text-yellow-400'}`}>{fmtEuros(totTotalPagar)}</td>
                       <td className="px-2 py-2.5 text-center"><SaldoBadge min={totSaldo} /></td>
                       <td></td>
                     </tr>
