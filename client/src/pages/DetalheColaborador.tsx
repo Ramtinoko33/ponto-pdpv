@@ -450,7 +450,7 @@ export default function DetalheColaborador() {
           <p className="text-sm text-muted-foreground">
             Colaborador Nº {numero} não tem registos no mês selecionado.
           </p>
-          <button onClick={() => navigate(-1 as any)} className="text-sm text-primary hover:underline">
+          <button onClick={() => navigate("/")} className="text-sm text-primary hover:underline">
             Voltar
           </button>
         </div>
@@ -464,7 +464,7 @@ export default function DetalheColaborador() {
       <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-20 px-6 py-3">
         <div className="flex items-center gap-4 max-w-7xl mx-auto">
           <button
-            onClick={() => navigate(-1 as any)}
+            onClick={() => navigate("/")}
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />

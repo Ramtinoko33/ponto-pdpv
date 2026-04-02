@@ -249,7 +249,7 @@ export default function PerfilColaborador() {
       {/* Botão voltar + título */}
       <div className="flex items-center gap-4">
         <button
-          onClick={() => navigate(-1 as any)}
+          onClick={() => navigate("/")}
           className="flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-100 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
