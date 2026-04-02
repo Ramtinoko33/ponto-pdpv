@@ -148,11 +148,54 @@ export function calcularResumoMonetario(
 }
 
 /**
- * REGRA ESPECIAL de cálculo de horas extra.
+ * REGRA ESPECIAL de cálculo de horas extra — versão DIA A DIA.
+ *
+ * Recebe um array de saldos diários e aplica a regra a cada dia individualmente,
+ * somando os resultados. Isto garante consistência com o DetalheColaborador.
+ *
+ * @param saldosDiarios - array de saldos diários em minutos (podem ser negativos)
+ * @param extraManualCentimos - extra manual em cêntimos
+ */
+export function calcularResumoMonetarioRegraEspecialDiaDia(
+  saldosDiarios: number[],
+  extraManualCentimos: number
+): ResumoMonetario {
+  let valorHorasExtraCentimos = 0;
+  let descontoNegativoCentimos = 0;
+  let minutosExtra = 0;
+
+  for (const saldo of saldosDiarios) {
+    if (saldo > 0) {
+      minutosExtra += saldo;
+      const tarifa = saldo <= 30 ? TARIFA_10_CENTIMOS : TARIFA_15_CENTIMOS;
+      valorHorasExtraCentimos += Math.round((saldo * tarifa) / 60);
+    } else if (saldo < 0) {
+      descontoNegativoCentimos += Math.round((Math.abs(saldo) * TARIFA_10_CENTIMOS) / 60);
+    }
+  }
+
+  const totalDinheiroPagarCentimos = valorHorasExtraCentimos - descontoNegativoCentimos + extraManualCentimos;
+
+  return {
+    minutosExtra,
+    horasExtraFormatadas: fmtMinutos(minutosExtra),
+    valorHorasExtraCentimos,
+    valorHorasExtra: centimosPaEuros(valorHorasExtraCentimos),
+    descontoNegativoCentimos,
+    descontoNegativoEuros: centimosPaEuros(descontoNegativoCentimos),
+    extraManualCentimos,
+    extraManualEuros: centimosPaEuros(extraManualCentimos),
+    totalDinheiroPagarCentimos,
+    totalDinheiroPagar: centimosPaEuros(totalDinheiroPagarCentimos),
+  };
+}
+
+/**
+ * REGRA ESPECIAL de cálculo de horas extra — versão SALDO TOTAL (legado, usada no DetalheColaborador).
  *
  * Usa o SALDO diário/mensal diretamente:
- * - Se saldo > 0 e ≤ 30 min → paga TUDO a 10€/h
- * - Se saldo > 0 e ≥ 31 min → paga TUDO a 15€/h
+ * - Se saldo > 0 e ≤30 min → paga TUDO a 10€/h
+ * - Se saldo > 0 e ≥31 min → paga TUDO a 15€/h
  * - Se saldo < 0 → desconta os minutos negativos a 10€/h
  * - Se saldo = 0 → 0€
  *

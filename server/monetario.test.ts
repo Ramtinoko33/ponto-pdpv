@@ -11,6 +11,7 @@ import {
   parseEurosInput,
   calcularResumoMonetario,
   calcularResumoMonetarioRegraEspecial,
+  calcularResumoMonetarioRegraEspecialDiaDia,
 } from './monetario';
 
 describe('calcularValorHorasExtraCentimos', () => {
@@ -257,6 +258,55 @@ describe('calcularResumoMonetarioRegraEspecial', () => {
 
   it('inclui extra manual no total a pagar', () => {
     const r = calcularResumoMonetarioRegraEspecial(30, 1000); // 5€ horas + 10€ manual = 15€
+    expect(r.valorHorasExtra).toBe(5.00);
+    expect(r.extraManualEuros).toBe(10.00);
+    expect(r.totalDinheiroPagar).toBe(15.00);
+  });
+});
+
+describe('calcularResumoMonetarioRegraEspecialDiaDia', () => {
+  // Regra: aplica RE a cada dia individualmente e soma os resultados
+
+  it('array vazio → 0€', () => {
+    const r = calcularResumoMonetarioRegraEspecialDiaDia([], 0);
+    expect(r.valorHorasExtra).toBe(0);
+    expect(r.totalDinheiroPagar).toBe(0);
+  });
+
+  it('um dia com 22min → 3.67€ (igual à versão saldo total)', () => {
+    const r = calcularResumoMonetarioRegraEspecialDiaDia([22], 0);
+    expect(r.valorHorasExtra).toBe(3.67);
+    expect(r.totalDinheiroPagar).toBe(3.67);
+  });
+
+  it('dois dias com 22min cada → 2×3.67 = 7.33€ (não soma antes de aplicar tarifa)', () => {
+    // Cada dia: 22min ≤30 → @10€/h = 3.67€
+    // Total: 7.33€ (vs saldo total 44min ≥31 → @15€/h = 11.00€)
+    const r = calcularResumoMonetarioRegraEspecialDiaDia([22, 22], 0);
+    expect(r.minutosExtra).toBe(44);
+    expect(r.valorHorasExtra).toBe(7.34); // 2 × 367 cêntimos = 734 cêntimos = 7.34€
+  });
+
+  it('um dia +45min e um dia -10min → 11.25 - 1.67 = 9.58€', () => {
+    const r = calcularResumoMonetarioRegraEspecialDiaDia([45, -10], 0);
+    // 45min @15€/h = round(45*1500/60) = 1125 cêntimos = 11.25€
+    // -10min @10€/h = round(10*1000/60) = 167 cêntimos = 1.67€
+    expect(r.valorHorasExtra).toBe(11.25);
+    expect(r.descontoNegativoEuros).toBe(1.67);
+    expect(r.totalDinheiroPagar).toBe(9.58);
+  });
+
+  it('dias mistos: 30min + 31min → tarifas diferentes por dia', () => {
+    // Dia 1: 30min ≤30 → @10€/h = 500 cêntimos = 5.00€
+    // Dia 2: 31min ≥31 → @15€/h = 775 cêntimos = 7.75€
+    // Total: 12.75€ (vs saldo total 61min → @15€/h = 15.25€)
+    const r = calcularResumoMonetarioRegraEspecialDiaDia([30, 31], 0);
+    expect(r.valorHorasExtra).toBe(12.75);
+    expect(r.minutosExtra).toBe(61);
+  });
+
+  it('inclui extra manual no total a pagar', () => {
+    const r = calcularResumoMonetarioRegraEspecialDiaDia([30], 1000); // 5€ horas + 10€ manual = 15€
     expect(r.valorHorasExtra).toBe(5.00);
     expect(r.extraManualEuros).toBe(10.00);
     expect(r.totalDinheiroPagar).toBe(15.00);

@@ -31,7 +31,7 @@ import { getDb } from "../db";
 import { registosDiarios } from "../../drizzle/schema";
 import { eq, and } from "drizzle-orm";
 import { calcularSaldo } from "../pontoEngine";
-import { calcularResumoMonetario, calcularResumoMonetarioRegraEspecial, eurosPaCentimos } from "../monetario";
+import { calcularResumoMonetario, calcularResumoMonetarioRegraEspecial, calcularResumoMonetarioRegraEspecialDiaDia, eurosPaCentimos } from "../monetario";
 import { meses as mesasTable } from "../../drizzle/schema";
 
 const MESES_PT = [
@@ -97,18 +97,20 @@ export const pontoRouter = router({
         celulasAuto: number; atrasoEn: number; excessoAlm: number;
         saidaCedo: number; extraSa: number; extra10Min: number; extra15Min: number;
         saldoTotal: number; saldoNegativoMin: number;
+        saldosDiarios: number[]; // para cálculo RE dia a dia
       }>();
       for (const r of registos) {
         const key = `${r.numero}|${r.nome}`;
         if (!map.has(key)) {
-          map.set(key, { numero: r.numero, nome: r.nome, diasTrab: 0, diasJust: 0, celulasAuto: 0, atrasoEn: 0, excessoAlm: 0, saidaCedo: 0, extraSa: 0, extra10Min: 0, extra15Min: 0, saldoTotal: 0, saldoNegativoMin: 0 });
+          map.set(key, { numero: r.numero, nome: r.nome, diasTrab: 0, diasJust: 0, celulasAuto: 0, atrasoEn: 0, excessoAlm: 0, saidaCedo: 0, extraSa: 0, extra10Min: 0, extra15Min: 0, saldoTotal: 0, saldoNegativoMin: 0, saldosDiarios: [] });
         }
         const res = map.get(key)!;
         if (r.justificacao) { res.diasJust++; continue; }
         if (r.saldo !== null) {
           res.diasTrab++;
           res.saldoTotal += r.saldo;
-          // Acumular minutos negativos separadamente (para desconto a 10€/h)
+          res.saldosDiarios.push(r.saldo); // guardar saldo diário para RE
+          // Acumular minutos negativos separadamente (para desconto a 10€/h no modo normal)
           if (r.saldo < 0) res.saldoNegativoMin += Math.abs(r.saldo);
           res.atrasoEn   += r.atrasoEn;
           res.excessoAlm += r.excessoAlm;
@@ -125,7 +127,8 @@ export const pontoRouter = router({
         .map(res => {
           const extraManualCentimos = mapaExtra[res.numero] ?? 0;
           const monetario = regraEspecialAtiva
-            ? calcularResumoMonetarioRegraEspecial(res.saldoTotal, extraManualCentimos)
+            // RE: calcular dia a dia para consistência com o DetalheColaborador
+            ? calcularResumoMonetarioRegraEspecialDiaDia(res.saldosDiarios, extraManualCentimos)
             : calcularResumoMonetario(res.extra10Min, res.extra15Min, extraManualCentimos, res.saldoNegativoMin);
           return { ...res, ...monetario, regraEspecialAtiva };
         });
