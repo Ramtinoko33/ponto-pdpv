@@ -401,14 +401,25 @@ export default function DetalheColaborador() {
   const totExtra = registosValidos.reduce((a, r) => a + r.extraSa, 0);
   const tot10Min = registosValidos.reduce((a, r) => a + (r.extra10Min ?? 0), 0);
   const tot15Min = registosValidos.reduce((a, r) => a + (r.extra15Min ?? 0), 0);
-  // Cálculo monetário: usa Regra Especial se ativa (soma almoço+tarde; ≤30min @10€/h, ≥31min @15€/h tudo)
-  const totAlmCurto = registosValidos.reduce((a, r) => a + (r.excessoAlm < 0 ? -r.excessoAlm : 0), 0); // almoço curto (positivo)
+  // Cálculo monetário: inclui desconto de minutos negativos a 10€/h
+  const totSaldoNegMin = registosValidos.reduce((a, r) => a + (r.saldo !== null && r.saldo < 0 ? Math.abs(r.saldo) : 0), 0);
+  const descontoNegEuros = Math.round((totSaldoNegMin / 60) * 10 * 100) / 100;
   const totExtraEuros = regraEspecialAtiva
     ? (() => {
-        const totalMin = Math.max(0, totAlmCurto + totExtra);
-        return Math.round((totalMin <= 30 ? (totalMin / 60) * 10 : (totalMin / 60) * 15) * 100) / 100;
+        // Regra Especial: usa saldo de cada dia individualmente (positivos pagos, negativos descontados)
+        let total = 0;
+        for (const r of registosValidos) {
+          const saldo = r.saldo ?? 0;
+          if (saldo > 0) {
+            const tarifa = saldo <= 30 ? 10 : 15;
+            total += Math.round((saldo / 60) * tarifa * 100);
+          } else if (saldo < 0) {
+            total -= Math.round((Math.abs(saldo) / 60) * 10 * 100);
+          }
+        }
+        return Math.round(total) / 100;
       })()
-    : Math.round(((tot10Min / 60) * 10 + (tot15Min / 60) * 15) * 100) / 100;
+    : Math.round(((tot10Min / 60) * 10 + (tot15Min / 60) * 15) * 100) / 100 - descontoNegEuros;
   const celulasAuto = registosValidos.reduce((a, r) =>
     a + (r.en1Auto ? 1 : 0) + (r.sa1Auto ? 1 : 0) + (r.en2Auto ? 1 : 0) + (r.sa2Auto ? 1 : 0), 0);
   const diasJust = registos.filter(r => !!r.justificacao).length;
@@ -539,8 +550,8 @@ export default function DetalheColaborador() {
             {
               icon: <span className={`font-bold text-xs ${regraEspecialAtiva ? 'text-amber-400' : 'text-emerald-400'}`}>€€€</span>,
               label: regraEspecialAtiva ? '⚡ Valor Extra (RE)' : 'Valor Extra',
-              value: totExtraEuros > 0 ? `${totExtraEuros.toFixed(2)}€` : "—",
-              color: regraEspecialAtiva ? 'text-amber-400' : 'text-emerald-400',
+              value: totExtraEuros !== 0 ? `${totExtraEuros >= 0 ? '' : ''}${totExtraEuros.toFixed(2)}€` : "—",
+              color: totExtraEuros < 0 ? 'text-red-500' : regraEspecialAtiva ? 'text-amber-400' : 'text-emerald-400',
             },
             { icon: <Calendar className="w-4 h-4 text-sky-500" />, label: "Dias Justificados", value: diasJust > 0 ? String(diasJust) : "—", color: "text-sky-500" },
             { icon: <Info className="w-4 h-4 text-amber-500" />, label: "Células Auto", value: celulasAuto > 0 ? String(celulasAuto) : "—", color: "text-amber-500" },

@@ -22,9 +22,10 @@ function SaldoBadge({ min }: { min: number }) {
   return <span className={`font-bold mono text-sm ${cls}`}>{fmtMin(min)}</span>;
 }
 
-/** Formata euros com 2 casas decimais, ex: 12.50 → "12.50€" */
+/** Formata euros com 2 casas decimais, ex: 12.50 → "12.50€", -5.00 → "-5.00€" */
 function fmtEuros(val: number) {
-  return val > 0 ? `${val.toFixed(2)}€` : '—';
+  if (val === 0) return '—';
+  return `${val.toFixed(2)}€`;
 }
 
 export default function VistaMensal({ mesId, meses, onSelectMes }: { mesId: number; meses: Mes[]; onSelectMes: (id: number) => void }) {
@@ -288,7 +289,7 @@ export default function VistaMensal({ mesId, meses, onSelectMes }: { mesId: numb
                             <td className="px-2 py-2 text-center mono text-orange-400">{r.excessoAlm > 0 ? `-${fmtMin(r.excessoAlm, false)}` : '—'}</td>
                             <td className="px-2 py-2 text-center mono text-red-400">{r.saidaCedo > 0 ? `-${fmtMin(r.saidaCedo, false)}` : '—'}</td>
                             <td className="px-2 py-2 text-center mono text-emerald-400">{r.extraSa > 0 ? `+${fmtMin(r.extraSa, false)}` : '—'}</td>
-                            <td className="px-2 py-2 text-center mono text-emerald-300 font-semibold">
+                            <td className={`px-2 py-2 text-center mono font-semibold ${valorHorasExtra < 0 ? 'text-red-400' : 'text-emerald-300'}`}>
                               {fmtEuros(valorHorasExtra)}
                             </td>
                             {/* Coluna Extra Manual — input editável */}
