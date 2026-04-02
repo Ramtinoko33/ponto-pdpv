@@ -10,6 +10,7 @@
  * TARIFAS:
  * - @10€/h = extra10Min (almoço curto + saída até 30min após hora esperada)
  * - @15€/h = extra15Min (saída acima de 30min após hora esperada)
+ * - Desconto: minutos negativos (saldo negativo) descontados a 10€/h
  */
 
 /** Tarifa base em cêntimos por hora */
@@ -27,6 +28,16 @@ export function calcularValorHorasExtraCentimos(
   const valor10 = Math.round((extra10Min * TARIFA_10_CENTIMOS) / 60);
   const valor15 = Math.round((extra15Min * TARIFA_15_CENTIMOS) / 60);
   return valor10 + valor15;
+}
+
+/**
+ * Calcula o desconto por minutos negativos (saldo negativo) em cêntimos.
+ * Minutos negativos são descontados a 10€/h.
+ * @param saldoNegativoMin - valor ABSOLUTO dos minutos negativos (sempre ≥ 0)
+ */
+export function calcularDescontoCentimos(saldoNegativoMin: number): number {
+  if (saldoNegativoMin <= 0) return 0;
+  return Math.round((saldoNegativoMin * TARIFA_10_CENTIMOS) / 60);
 }
 
 /**
@@ -89,34 +100,46 @@ export function fmtMinutos(min: number): string {
  * Resultado completo do resumo monetário de um colaborador num período.
  */
 export interface ResumoMonetario {
-  minutosExtra: number;           // total minutos extra (extra10Min + extra15Min)
-  horasExtraFormatadas: string;   // ex: "01:15"
-  valorHorasExtraCentimos: number; // valor em cêntimos
-  valorHorasExtra: number;        // valor em euros (2 casas)
-  extraManualCentimos: number;    // extra manual em cêntimos
-  extraManualEuros: number;       // extra manual em euros (2 casas)
-  totalDinheiroPagarCentimos: number; // total em cêntimos
-  totalDinheiroPagar: number;     // total em euros (2 casas)
+  minutosExtra: number;              // total minutos extra positivos (extra10Min + extra15Min)
+  horasExtraFormatadas: string;      // ex: "01:15"
+  valorHorasExtraCentimos: number;   // valor bruto em cêntimos (antes do desconto)
+  valorHorasExtra: number;           // valor bruto em euros (2 casas)
+  descontoNegativoCentimos: number;  // desconto por minutos negativos em cêntimos
+  descontoNegativoEuros: number;     // desconto em euros (2 casas)
+  extraManualCentimos: number;       // extra manual em cêntimos
+  extraManualEuros: number;          // extra manual em euros (2 casas)
+  totalDinheiroPagarCentimos: number; // total líquido em cêntimos
+  totalDinheiroPagar: number;        // total líquido em euros (2 casas)
 }
 
 /**
  * Calcula o resumo monetário completo de um colaborador.
  * Modo normal: extra10Min @10€/h + extra15Min @15€/h (separados)
+ * Desconto: saldoNegativoMin @10€/h (subtraído ao total)
+ *
+ * @param extra10Min - minutos extra pagos a 10€/h
+ * @param extra15Min - minutos extra pagos a 15€/h
+ * @param extraManualCentimos - extra manual em cêntimos
+ * @param saldoNegativoMin - minutos negativos acumulados (valor absoluto, sempre ≥ 0)
  */
 export function calcularResumoMonetario(
   extra10Min: number,
   extra15Min: number,
-  extraManualCentimos: number
+  extraManualCentimos: number,
+  saldoNegativoMin: number = 0
 ): ResumoMonetario {
   const minutosExtra = extra10Min + extra15Min;
   const valorHorasExtraCentimos = calcularValorHorasExtraCentimos(extra10Min, extra15Min);
-  const totalDinheiroPagarCentimos = valorHorasExtraCentimos + extraManualCentimos;
+  const descontoNegativoCentimos = calcularDescontoCentimos(Math.max(0, saldoNegativoMin));
+  const totalDinheiroPagarCentimos = valorHorasExtraCentimos - descontoNegativoCentimos + extraManualCentimos;
 
   return {
     minutosExtra,
     horasExtraFormatadas: fmtMinutos(minutosExtra),
     valorHorasExtraCentimos,
     valorHorasExtra: centimosPaEuros(valorHorasExtraCentimos),
+    descontoNegativoCentimos,
+    descontoNegativoEuros: centimosPaEuros(descontoNegativoCentimos),
     extraManualCentimos,
     extraManualEuros: centimosPaEuros(extraManualCentimos),
     totalDinheiroPagarCentimos,
@@ -128,36 +151,48 @@ export function calcularResumoMonetario(
  * REGRA ESPECIAL de cálculo de horas extra.
  *
  * Usa o SALDO diário/mensal diretamente:
- * - Se saldo ≤ 30 min → paga TUDO a 10€/h
- * - Se saldo ≥ 31 min → paga TUDO a 15€/h
+ * - Se saldo > 0 e ≤ 30 min → paga TUDO a 10€/h
+ * - Se saldo > 0 e ≥ 31 min → paga TUDO a 15€/h
+ * - Se saldo < 0 → desconta os minutos negativos a 10€/h
+ * - Se saldo = 0 → 0€
  *
  * Exemplos:
- *   Saldo 22min ≤ 30 → 22/60*10 = 3.67€
- *   Saldo 30min ≤ 30 → 30/60*10 = 5.00€
- *   Saldo 31min ≥ 31 → 31/60*15 = 7.75€
- *   Saldo 45min ≥ 31 → 45/60*15 = 11.25€
- *   Saldo negativo → 0€
+ *   Saldo +22min ≤ 30 → 22/60*10 = 3.67€
+ *   Saldo +30min ≤ 30 → 30/60*10 = 5.00€
+ *   Saldo +31min ≥ 31 → 31/60*15 = 7.75€
+ *   Saldo +45min ≥ 31 → 45/60*15 = 11.25€
+ *   Saldo -10min → desconto 10/60*10 = -1.67€
  *
- * @param saldoMin - saldo em minutos (diário ou acumulado mensal)
+ * @param saldoMin - saldo em minutos (diário ou acumulado mensal, pode ser negativo)
  * @param extraManualCentimos - extra manual em cêntimos
  */
 export function calcularResumoMonetarioRegraEspecial(
   saldoMin: number,
   extraManualCentimos: number
 ): ResumoMonetario {
-  // Usa o saldo; nunca negativo
-  const totalMin = Math.max(0, saldoMin);
+  let valorHorasExtraCentimos = 0;
+  let descontoNegativoCentimos = 0;
+  let minutosExtra = 0;
 
-  // Aplica tarifa: ≤ 30min → @10€/h; ≥ 31min → @15€/h (TUDO)
-  const tarifa = totalMin <= 30 ? TARIFA_10_CENTIMOS : TARIFA_15_CENTIMOS;
-  const valorHorasExtraCentimos = Math.round((totalMin * tarifa) / 60);
-  const totalDinheiroPagarCentimos = valorHorasExtraCentimos + extraManualCentimos;
+  if (saldoMin > 0) {
+    // Saldo positivo: aplica tarifa
+    minutosExtra = saldoMin;
+    const tarifa = saldoMin <= 30 ? TARIFA_10_CENTIMOS : TARIFA_15_CENTIMOS;
+    valorHorasExtraCentimos = Math.round((saldoMin * tarifa) / 60);
+  } else if (saldoMin < 0) {
+    // Saldo negativo: desconta a 10€/h
+    descontoNegativoCentimos = Math.round((Math.abs(saldoMin) * TARIFA_10_CENTIMOS) / 60);
+  }
+
+  const totalDinheiroPagarCentimos = valorHorasExtraCentimos - descontoNegativoCentimos + extraManualCentimos;
 
   return {
-    minutosExtra: totalMin,
-    horasExtraFormatadas: fmtMinutos(totalMin),
+    minutosExtra,
+    horasExtraFormatadas: fmtMinutos(minutosExtra),
     valorHorasExtraCentimos,
     valorHorasExtra: centimosPaEuros(valorHorasExtraCentimos),
+    descontoNegativoCentimos,
+    descontoNegativoEuros: centimosPaEuros(descontoNegativoCentimos),
     extraManualCentimos,
     extraManualEuros: centimosPaEuros(extraManualCentimos),
     totalDinheiroPagarCentimos,

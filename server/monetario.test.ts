@@ -170,6 +170,24 @@ describe('calcularResumoMonetario', () => {
     expect(r.extraManualEuros).toBe(20);
     expect(r.totalDinheiroPagar).toBe(20);
   });
+
+  it('desconta minutos negativos a 10€/h (ex: 30min extra - 10min neg = 5.00 - 1.67 = 3.33€)', () => {
+    // extra10Min=30, saldoNegativoMin=10
+    // valorExtra = 30*1000/60 = 500 cêntimos = 5.00€
+    // desconto = 10*1000/60 = 167 cêntimos = 1.67€
+    // total = 500 - 167 = 333 cêntimos = 3.33€
+    const r = calcularResumoMonetario(30, 0, 0, 10);
+    expect(r.valorHorasExtra).toBe(5.00);
+    expect(r.descontoNegativoEuros).toBe(1.67);
+    expect(r.totalDinheiroPagar).toBe(3.33);
+  });
+
+  it('desconto sem horas extra resulta em total negativo', () => {
+    const r = calcularResumoMonetario(0, 0, 0, 60); // 60min neg = -10.00€
+    expect(r.valorHorasExtra).toBe(0);
+    expect(r.descontoNegativoEuros).toBe(10.00);
+    expect(r.totalDinheiroPagar).toBe(-10.00);
+  });
 });
 
 describe('calcularResumoMonetarioRegraEspecial', () => {
@@ -215,10 +233,19 @@ describe('calcularResumoMonetarioRegraEspecial', () => {
   });
 
   // Edge cases
-  it('saldo negativo → 0 minutos, 0€', () => {
-    const r = calcularResumoMonetarioRegraEspecial(-5, 0);
+  it('saldo negativo → desconto a 10€/h (ex: -10min = -1.67€)', () => {
+    const r = calcularResumoMonetarioRegraEspecial(-10, 0);
     expect(r.minutosExtra).toBe(0);
     expect(r.valorHorasExtra).toBe(0);
+    // 10 * 1000 / 60 = round(166.67) = 167 cêntimos = 1.67€
+    expect(r.descontoNegativoEuros).toBe(1.67);
+    expect(r.totalDinheiroPagar).toBe(-1.67);
+  });
+
+  it('saldo negativo -60min → desconto -10.00€', () => {
+    const r = calcularResumoMonetarioRegraEspecial(-60, 0);
+    expect(r.descontoNegativoEuros).toBe(10.00);
+    expect(r.totalDinheiroPagar).toBe(-10.00);
   });
 
   it('saldo zero → 0€', () => {

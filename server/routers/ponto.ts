@@ -95,18 +95,21 @@ export const pontoRouter = router({
       const map = new Map<string, {
         numero: string; nome: string; diasTrab: number; diasJust: number;
         celulasAuto: number; atrasoEn: number; excessoAlm: number;
-        saidaCedo: number; extraSa: number; extra10Min: number; extra15Min: number; saldoTotal: number;
+        saidaCedo: number; extraSa: number; extra10Min: number; extra15Min: number;
+        saldoTotal: number; saldoNegativoMin: number;
       }>();
       for (const r of registos) {
         const key = `${r.numero}|${r.nome}`;
         if (!map.has(key)) {
-          map.set(key, { numero: r.numero, nome: r.nome, diasTrab: 0, diasJust: 0, celulasAuto: 0, atrasoEn: 0, excessoAlm: 0, saidaCedo: 0, extraSa: 0, extra10Min: 0, extra15Min: 0, saldoTotal: 0 });
+          map.set(key, { numero: r.numero, nome: r.nome, diasTrab: 0, diasJust: 0, celulasAuto: 0, atrasoEn: 0, excessoAlm: 0, saidaCedo: 0, extraSa: 0, extra10Min: 0, extra15Min: 0, saldoTotal: 0, saldoNegativoMin: 0 });
         }
         const res = map.get(key)!;
         if (r.justificacao) { res.diasJust++; continue; }
         if (r.saldo !== null) {
           res.diasTrab++;
           res.saldoTotal += r.saldo;
+          // Acumular minutos negativos separadamente (para desconto a 10€/h)
+          if (r.saldo < 0) res.saldoNegativoMin += Math.abs(r.saldo);
           res.atrasoEn   += r.atrasoEn;
           res.excessoAlm += r.excessoAlm;
           res.saidaCedo  += r.saidaCedo;
@@ -123,7 +126,7 @@ export const pontoRouter = router({
           const extraManualCentimos = mapaExtra[res.numero] ?? 0;
           const monetario = regraEspecialAtiva
             ? calcularResumoMonetarioRegraEspecial(res.saldoTotal, extraManualCentimos)
-            : calcularResumoMonetario(res.extra10Min, res.extra15Min, extraManualCentimos);
+            : calcularResumoMonetario(res.extra10Min, res.extra15Min, extraManualCentimos, res.saldoNegativoMin);
           return { ...res, ...monetario, regraEspecialAtiva };
         });
     }),

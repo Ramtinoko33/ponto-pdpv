@@ -256,25 +256,55 @@ function LinhaRegistoEditavel({ registo: r, onSaved, regraEspecialAtiva = false 
         {regraEspecialAtiva ? (() => {
           if (isJust) return <span className="text-muted-foreground/30 text-xs">—</span>;
           const saldo = r.saldo ?? 0;
-          const totalMin = Math.max(0, saldo);
-          if (totalMin === 0) return <span className="text-muted-foreground/30 text-xs">—</span>;
-          const tarifa = totalMin <= 30 ? 10 : 15;
-          const valor = (totalMin / 60) * tarifa;
+          if (saldo > 0) {
+            const tarifa = saldo <= 30 ? 10 : 15;
+            const valor = (saldo / 60) * tarifa;
+            return (
+              <span className="font-mono text-xs font-semibold text-emerald-400" title={`Saldo +${saldo}min × ${tarifa}€/h = +${valor.toFixed(2)}€`}>
+                <span className="text-[9px] text-amber-400 mr-0.5">⚡+{saldo}min@{tarifa}€</span>
+                +{valor.toFixed(2)}€
+              </span>
+            );
+          } else if (saldo < 0) {
+            const minNeg = Math.abs(saldo);
+            const desconto = (minNeg / 60) * 10;
+            return (
+              <span className="font-mono text-xs font-semibold text-red-400" title={`Desconto ${saldo}min × 10€/h = -${desconto.toFixed(2)}€`}>
+                <span className="text-[9px] text-red-400 mr-0.5">⚡-{minNeg}min@10€</span>
+                -{desconto.toFixed(2)}€
+              </span>
+            );
+          }
+          return <span className="text-muted-foreground/30 text-xs">—</span>;
+        })() : (() => {
+          if (isJust) return <span className="text-muted-foreground/30 text-xs">—</span>;
+          const saldo = r.saldo ?? 0;
+          const extra10 = r.extra10Min ?? 0;
+          const extra15 = r.extra15Min ?? 0;
+          const valorExtra = (extra10 / 60) * 10 + (extra15 / 60) * 15;
+          const desconto = saldo < 0 ? (Math.abs(saldo) / 60) * 10 : 0;
+          const liquido = valorExtra - desconto;
+          if (extra10 === 0 && extra15 === 0 && saldo >= 0) {
+            return <span className="text-muted-foreground/30 text-xs">—</span>;
+          }
+          if (saldo < 0 && extra10 === 0 && extra15 === 0) {
+            return (
+              <span className="font-mono text-xs font-semibold text-red-400" title={`Desconto ${Math.abs(saldo)}min × 10€/h = -${desconto.toFixed(2)}€`}>
+                -{desconto.toFixed(2)}€
+              </span>
+            );
+          }
           return (
-            <span className="font-mono text-xs font-semibold text-emerald-400" title={`Saldo ${totalMin}min × ${tarifa}€/h = ${valor.toFixed(2)}€`}>
-              <span className="text-[9px] text-amber-400 mr-0.5">⚡{totalMin}min@{tarifa}€</span>
-              {valor.toFixed(2)}€
+            <span className="font-mono text-xs font-semibold" title={`Extra: +${valorExtra.toFixed(2)}€ | Desconto: -${desconto.toFixed(2)}€ | Líquido: ${liquido.toFixed(2)}€`}>
+              {desconto > 0 && (
+                <span className="text-[9px] text-red-400 mr-0.5">-{desconto.toFixed(2)}€</span>
+              )}
+              <span className={liquido >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                {liquido >= 0 ? '+' : ''}{liquido.toFixed(2)}€
+              </span>
             </span>
           );
-        })() : (
-          !isJust && ((r.extra10Min ?? 0) + (r.extra15Min ?? 0)) > 0 ? (
-            <span className="font-mono text-xs font-semibold text-emerald-400">
-              {(((r.extra10Min ?? 0) / 60) * 10 + ((r.extra15Min ?? 0) / 60) * 15).toFixed(2)}€
-            </span>
-          ) : (
-            <span className="text-muted-foreground/30 text-xs">—</span>
-          )
-        )}
+        })()}
       </td>
 
       {/* Cenário */}
