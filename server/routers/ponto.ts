@@ -193,8 +193,13 @@ export const pontoRouter = router({
       const isSabado = registo.diaSemana === 'SÁB' || registo.diaSemana === 'SAB';
       const numStr = String(registo.numero).trim().replace(/^0+/, '') || '0';
 
-      // Recalcular saldo com os novos valores
-      const calc = calcularSaldo(input.en1, input.sa1, input.en2, input.sa2, isSabado, numStr);
+      // Preenchimento automático: SA2 vazia num dia normal com EN2 preenchido → 18:30
+      const sa2Vazia = !input.sa2 || input.sa2 === '' || input.sa2 === 'HH:MM';
+      const en2Preenchido = input.en2 && input.en2 !== '' && input.en2 !== 'HH:MM';
+      const sa2Final = (!isSabado && sa2Vazia && en2Preenchido) ? '18:30' : input.sa2;
+
+      // Recalcular saldo com os novos valores (incluindo SA2 preenchido automaticamente)
+      const calc = calcularSaldo(input.en1, input.sa1, input.en2, sa2Final, isSabado, numStr);
 
       // Determinar quais campos foram editados manualmente (não são auto)
       // Se o utilizador editou, marca como não-auto (0)
@@ -202,7 +207,7 @@ export const pontoRouter = router({
         en1: input.en1,
         sa1: input.sa1,
         en2: input.en2,
-        sa2: input.sa2,
+        sa2: sa2Final,
         en1Auto: input.en1 !== registo.en1 ? 0 : registo.en1Auto,
         sa1Auto: input.sa1 !== registo.sa1 ? 0 : registo.sa1Auto,
         en2Auto: input.en2 !== registo.en2 ? 0 : registo.en2Auto,
