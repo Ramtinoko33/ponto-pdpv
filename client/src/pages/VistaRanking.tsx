@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { trpc } from '@/lib/trpc';
-import { TrendingDown, TrendingUp, Clock, LogOut } from 'lucide-react';
+import { TrendingDown, TrendingUp, Clock, LogOut, Calendar } from 'lucide-react';
 
 function fmtMin(min: number, showSign = false) {
   const sign = showSign ? (min >= 0 ? '+' : '-') : '';
@@ -10,14 +11,12 @@ function fmtMin(min: number, showSign = false) {
 }
 
 function RankingCard({
-  title, icon, color, data, valueKey, label,
+  title, icon, color, data,
 }: {
   title: string;
   icon: React.ReactNode;
   color: string;
   data: Array<{ nome: string; value: number }>;
-  valueKey: string;
-  label: string;
 }) {
   const max = Math.max(...data.map(d => d.value), 1);
   return (
@@ -64,14 +63,28 @@ function RankingCard({
 }
 
 export default function VistaRanking() {
-  const { data: resumo = [], isLoading } = trpc.ponto.getResumoAcumulado.useQuery();
+  // null = acumulado; número = mesId específico
+  const [mesIdSelecionado, setMesIdSelecionado] = useState<number | null>(null);
 
-  if (isLoading) return <div className="py-12 text-center text-muted-foreground text-sm">A carregar...</div>;
-  if (resumo.length === 0) return (
-    <div className="py-16 text-center text-muted-foreground text-sm">
-      Nenhum dado disponível. Carregue pelo menos um mês.
-    </div>
+  const { data: meses = [] } = trpc.ponto.listarMeses.useQuery();
+  const { data: resumoAcumulado = [], isLoading: loadingAcum } = trpc.ponto.getResumoAcumulado.useQuery();
+  const { data: resumoMes = [], isLoading: loadingMes } = trpc.ponto.getResumoMes.useQuery(
+    { mesId: mesIdSelecionado! },
+    { enabled: mesIdSelecionado !== null }
   );
+
+  const isLoading = mesIdSelecionado === null ? loadingAcum : loadingMes;
+
+  // Normalizar os dados do mês (getResumoMes retorna campos extra como monetario)
+  // Ambos têm: nome, atrasoEn, excessoAlm, saidaCedo, extraSa, saldoTotal
+  const resumo: Array<{
+    nome: string;
+    atrasoEn: number;
+    excessoAlm: number;
+    saidaCedo: number;
+    extraSa: number;
+    saldoTotal: number;
+  }> = mesIdSelecionado === null ? resumoAcumulado : resumoMes;
 
   const top10Atrasos = [...resumo]
     .filter(r => r.atrasoEn > 0)
@@ -109,63 +122,83 @@ export default function VistaRanking() {
     .slice(0, 10)
     .map(r => ({ nome: r.nome, value: r.saldoTotal }));
 
+  const labelAtual = mesIdSelecionado === null
+    ? 'Acumulado — todos os meses carregados'
+    : (meses.find(m => m.id === mesIdSelecionado)?.label ?? 'Mês selecionado');
+
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-bold">Ranking de Colaboradores</h1>
-        <p className="text-sm text-muted-foreground mt-1">Top 10 por categoria — acumulado de todos os meses carregados.</p>
+      {/* Cabeçalho + seletor */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold">Ranking de Colaboradores</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Top 10 por categoria — <span className="text-foreground font-medium">{labelAtual}</span>
+          </p>
+        </div>
+
+        {/* Seletor de mês */}
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+          <select
+            value={mesIdSelecionado ?? ''}
+            onChange={e => setMesIdSelecionado(e.target.value === '' ? null : parseInt(e.target.value))}
+            className="h-8 px-3 text-sm rounded-md border border-border bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+          >
+            <option value="">Acumulado (todos)</option>
+            {meses.map(m => (
+              <option key={m.id} value={m.id}>{m.label}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        <RankingCard
-          title="Mais Atrasos na Entrada"
-          icon={<TrendingDown className="w-4 h-4" />}
-          color="text-red-400"
-          data={top10Atrasos}
-          valueKey="atrasoEn"
-          label="atraso"
-        />
-        <RankingCard
-          title="Mais Tempo no Almoço"
-          icon={<Clock className="w-4 h-4" />}
-          color="text-orange-400"
-          data={top10Almoco}
-          valueKey="excessoAlm"
-          label="excesso"
-        />
-        <RankingCard
-          title="Mais Saídas Antecipadas"
-          icon={<LogOut className="w-4 h-4" />}
-          color="text-red-400"
-          data={top10SaidaCedo}
-          valueKey="saidaCedo"
-          label="saída cedo"
-        />
-        <RankingCard
-          title="Mais Horas Extra"
-          icon={<TrendingUp className="w-4 h-4" />}
-          color="text-emerald-400"
-          data={top10Extra}
-          valueKey="extraSa"
-          label="extra"
-        />
-        <RankingCard
-          title="Maior Saldo Negativo"
-          icon={<TrendingDown className="w-4 h-4" />}
-          color="text-red-400"
-          data={top10SaldoNeg}
-          valueKey="saldoTotal"
-          label="negativo"
-        />
-        <RankingCard
-          title="Maior Saldo Positivo"
-          icon={<TrendingUp className="w-4 h-4" />}
-          color="text-emerald-400"
-          data={top10SaldoPos}
-          valueKey="saldoTotal"
-          label="positivo"
-        />
-      </div>
+      {isLoading ? (
+        <div className="py-12 text-center text-muted-foreground text-sm">A carregar...</div>
+      ) : resumo.length === 0 ? (
+        <div className="py-16 text-center text-muted-foreground text-sm">
+          Nenhum dado disponível. Carregue pelo menos um mês.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <RankingCard
+            title="Mais Atrasos na Entrada"
+            icon={<TrendingDown className="w-4 h-4" />}
+            color="text-red-400"
+            data={top10Atrasos}
+          />
+          <RankingCard
+            title="Mais Tempo no Almoço"
+            icon={<Clock className="w-4 h-4" />}
+            color="text-orange-400"
+            data={top10Almoco}
+          />
+          <RankingCard
+            title="Mais Saídas Antecipadas"
+            icon={<LogOut className="w-4 h-4" />}
+            color="text-red-400"
+            data={top10SaidaCedo}
+          />
+          <RankingCard
+            title="Mais Horas Extra"
+            icon={<TrendingUp className="w-4 h-4" />}
+            color="text-emerald-400"
+            data={top10Extra}
+          />
+          <RankingCard
+            title="Maior Saldo Negativo"
+            icon={<TrendingDown className="w-4 h-4" />}
+            color="text-red-400"
+            data={top10SaldoNeg}
+          />
+          <RankingCard
+            title="Maior Saldo Positivo"
+            icon={<TrendingUp className="w-4 h-4" />}
+            color="text-emerald-400"
+            data={top10SaldoPos}
+          />
+        </div>
+      )}
     </div>
   );
 }
